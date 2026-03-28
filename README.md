@@ -1,2 +1,1 @@
-# pack-it
-AI-Powered Travel Packing Helper
+AI-Powered Travel Packing Assistant
