@@ -5,7 +5,7 @@ const App = () => {
 	return (
 		<div>
 			<h1 className='text-blue-400'>
-				tailwind test
+				hi
 			</h1>
 		</div>
 	)
