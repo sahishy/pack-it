@@ -1,29 +1,21 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { auth, db } from '../lib/firebase'
-import { getDoc, doc } from 'firebase/firestore'
+import { auth } from '../lib/firebase'
+import useUserProfile from '../hooks/useUserProfile'
 
 const AuthContext = createContext()
 
 const AuthProvider = ({ children }) => {
 
     const [user, setUser] = useState(null)
-    const [profile, setProfile] = useState(null)
-    const [loading, setLoading] = useState(true)
+    const [authLoading, setAuthLoading] = useState(true)
     const [authError, setAuthError] = useState(null)
 
-    const loadProfile = useCallback(async (uid) => {
-
-        const profileRef = doc(db, 'users', uid)
-        const profileSnap = await getDoc(profileRef)
-
-        if (profileSnap.exists()) {
-            setProfile(profileSnap.data())
-        } else {
-            setProfile(null)
-        }
-
-    }, [])
+    const {
+        profile,
+        loading: profileLoading,
+        error: profileError,
+    } = useUserProfile(user?.uid)
 
     useEffect(() => {
 
@@ -31,32 +23,27 @@ const AuthProvider = ({ children }) => {
             try {
                 setAuthError(null)
                 setUser(firebaseUser)
-
-                if (firebaseUser) {
-                    await loadProfile(firebaseUser.uid)
-                } else {
-                    setProfile(null)
-                }
             } catch (error) {
                 console.error('Failed to sync auth/profile state', error)
                 setAuthError(error)
-                setProfile(null)
             } finally {
-                setLoading(false)
+                setAuthLoading(false)
             }
         })
 
         return () => unsubscribe()
 
-    }, [loadProfile])
+    }, [])
 
     const logout = async () => {
         await signOut(auth)
     }
 
-    const refreshProfile = useCallback(() => {
-        return user ? loadProfile(user.uid) : Promise.resolve()
-    }, [user, loadProfile])
+    const loading = authLoading || (user ? profileLoading : false)
+
+    const refreshProfile = useCallback(() => Promise.resolve(), [])
+
+    const mergedAuthError = useMemo(() => authError ?? profileError ?? null, [authError, profileError])
 
     return (
         <AuthContext.Provider
@@ -64,7 +51,8 @@ const AuthProvider = ({ children }) => {
                 user,
                 profile,
                 loading,
-                authError,
+                error: mergedAuthError,
+                authError: mergedAuthError,
                 logout,
                 refreshProfile,
             }}

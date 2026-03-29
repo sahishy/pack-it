@@ -6,13 +6,24 @@ html {
 
 }
 
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.no-spinner[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
 
 @media (prefers-color-scheme: light) {
 
     @theme {
 
-		--color-primary0: #FFF;
-		--color-primary1: #FFF;
+		--color-primary0: #318def;
+		--color-primary1: #13acdc;
 
         --color-neutral0: #1F2937;
         --color-neutral1: #9CA3AF;

@@ -1,7 +1,6 @@
 const VARIANT_STYLES = {
-    primary: 'bg-neutral0 text-primary0 hover:opacity-90',
-    secondary: 'bg-primary0 text-neutral0 border border-neutral2 hover:bg-neutral4',
-    ghost: 'bg-transparent text-neutral0 hover:bg-neutral4',
+    primary: 'bg-linear-to-t from-primary0 to-primary1 text-neutral5 border border-primary0 hover:to-primary0',
+    secondary: 'bg-linear-to-t from-neutral4 to-neutral5 text-neutral0 border border-neutral2 hover:to-neutral4'
 }
 
 const Button = ({
@@ -13,14 +12,14 @@ const Button = ({
     disabled = false,
     ...props
 }) => {
-    
+
     const isDisabled = loading || disabled
 
     return (
         <button
             type={type}
             disabled={isDisabled}
-            className={`inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-medium transition 
+            className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition 
                 ${VARIANT_STYLES[variant] ?? VARIANT_STYLES.primary} 
                 disabled:cursor-not-allowed disabled:opacity-60 
                 cursor-pointer

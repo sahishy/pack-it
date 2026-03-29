@@ -1,11 +1,10 @@
 import BasePopover from './BasePopover'
 
-const Dropdown = ({ trigger, children, align = 'right' }) => {
+const Dropdown = ({ trigger, children }) => {
     return (
         <BasePopover
             trigger={trigger}
-            align={align}
-            contentClassName='min-w-56 rounded-xl border border-neutral3 bg-primary0 p-2 shadow-lg shadow-shadow'
+            contentClassName='min-w-56 rounded-xl border border-neutral3 bg-neutral5 p-2 shadow-md shadow-shadow'
         >
             {children}
         </BasePopover>
