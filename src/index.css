@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
 html {
-	
+
+    @apply text-neutral0;
+
+}
+
+
+@media (prefers-color-scheme: light) {
+
+    @theme {
+
+		--color-primary0: #FFF;
+		--color-primary1: #FFF;
+
+        --color-neutral0: #1F2937;
+        --color-neutral1: #9CA3AF;
+        --color-neutral2: #D1D5DB;
+        --color-neutral3: #E5E7EB;
+        --color-neutral4: #F3F4F6;
+        --color-neutral5: white;
+
+        --color-negative0: #FF0000;
+
+		--color-shadow: rgba(0, 0, 0, 0.02);
+
+    }
+
 }
