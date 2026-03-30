@@ -18,6 +18,29 @@ const Home = () => {
     const totalTrips = getTotalTripsCount(trips);
     const upcomingTrips = getUpcomingTripsCount(trips);
 
+    const sortedTrips = [...trips].sort((a, b) => {
+        const getCreatedAtMs = (trip) => {
+            const createdAt = trip?.createdAt
+
+            if (!createdAt) {
+                return 0
+            }
+
+            if (typeof createdAt?.toMillis === 'function') {
+                return createdAt.toMillis()
+            }
+
+            if (createdAt instanceof Date) {
+                return createdAt.getTime()
+            }
+
+            const parsed = new Date(createdAt).getTime()
+            return Number.isNaN(parsed) ? 0 : parsed
+        }
+
+        return getCreatedAtMs(b) - getCreatedAtMs(a)
+    })
+
     if (!user) {
         return <Navigate to='/login' replace />
     }
@@ -71,11 +94,11 @@ const Home = () => {
                 <section>
                     <h2 className='text-xl font-semibold text-neutral0'>Your Trips</h2>
 
-                    {trips.length === 0 ? (
+                    {sortedTrips.length === 0 ? (
                         <p className='mt-2 text-sm text-neutral1'>No trips yet. Click + to create your first one.</p>
                     ) : (
                         <div className='mt-4 grid gap-4 grid-cols-2'>
-                            {trips.map((trip) => (
+                            {sortedTrips.map((trip) => (
                                 <Trip key={trip.id} trip={trip} />
                             ))}
                         </div>

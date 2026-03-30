@@ -40,7 +40,7 @@ const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting 
                     type='button'
                     onClick={() => onDelete(item.id)}
                     disabled={isBusy}
-                    className='rounded-lg p-2 text-neutral1 transition cursor-pointer hover:bg-neutral4 hover:text-negative0 disabled:cursor-not-allowed disabled:opacity-60'
+                    className='rounded-lg p-2 text-neutral1 transition cursor-pointer hover:bg-neutral4 hover:text-negative1 disabled:cursor-not-allowed disabled:opacity-60'
                     aria-label={`Delete ${item.name}`}
                 >
                     <FiTrash2 className='text-xl' />

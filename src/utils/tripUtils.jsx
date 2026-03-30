@@ -17,10 +17,29 @@ const getTripThumbnail = (trip) => {
     return trip?.thumbnailUrl || FALLBACK_TRIP_THUMBNAIL
 }
 
+const getTripDurationDays = (trip) => {
+    const startDate = new Date(trip?.startDate)
+    const endDate = new Date(trip?.endDate)
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+        return 0
+    }
+
+    const millisecondsPerDay = 1000 * 60 * 60 * 24
+    const dateDifference = endDate.getTime() - startDate.getTime()
+
+    if (dateDifference < 0) {
+        return 0
+    }
+
+    return Math.max(1, Math.ceil(dateDifference / millisecondsPerDay))
+}
+
 export {
     FALLBACK_TRIP_THUMBNAIL,
     getTotalTripsCount,
     getUpcomingTripsCount,
     getTripById,
     getTripThumbnail,
+    getTripDurationDays,
 }

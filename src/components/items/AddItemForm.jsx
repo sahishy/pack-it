@@ -6,6 +6,7 @@ import Counter from '../popover/Counter'
 import Card from '../ui/Card'
 import { useAuth } from '../../contexts/AuthContext'
 import { createItem } from '../../services/itemService'
+import { deleteTripPlan } from '../../services/planService'
 import { ITEM_CATEGORIES } from '../../utils/itemUtils'
 
 const CATEGORY_OPTIONS = ITEM_CATEGORIES
@@ -54,6 +55,8 @@ const AddItemForm = ({ tripId, setShowAddForm }) => {
                 quantity,
             })
 
+            await deleteTripPlan(user.uid, tripId)
+
             setFormData({ name: '', category: '', quantity: 1 })
             setShowAddForm(false)
         } catch (errorValue) {
@@ -95,12 +98,12 @@ const AddItemForm = ({ tripId, setShowAddForm }) => {
                     />
                 </div>
 
-                {formError ? <p className='text-sm text-negative0'>{formError}</p> : null}
-                {createError ? <p className='text-sm text-negative0'>{createError.message}</p> : null}
+                {formError ? <p className='text-sm text-negative1'>{formError}</p> : null}
+                {createError ? <p className='text-sm text-negative1'>{createError.message}</p> : null}
 
                 <div className='flex gap-3 mt-3'>
                     <Button type='submit' loading={creating} className='w-full'>Add Item</Button>
-                    <Button variant='secondary' loading={creating} onClick={() => setShowAddForm(false)}>
+                    <Button variant='secondary' disabled={creating} onClick={() => setShowAddForm(false)}>
                         Cancel
                     </Button>
                 </div>

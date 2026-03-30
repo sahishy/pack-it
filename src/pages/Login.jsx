@@ -163,7 +163,7 @@ const Login = () => {
 								onChange={handleChange}
 							/>
 
-							{error ? <p className='text-sm text-negative0'>{error}</p> : null}
+							{error ? <p className='text-sm text-negative1'>{error}</p> : null}
 
 							<Button type='submit' loading={loading} className='w-full'>
 								Continue
@@ -181,7 +181,7 @@ const Login = () => {
 								onChange={handleChange}
 							/>
 
-							{error ? <p className='text-sm text-negative0'>{error}</p> : null}
+							{error ? <p className='text-sm text-negative1'>{error}</p> : null}
 
 							<Button type='submit' loading={loading} className='w-full mt-2'>
 								Log In

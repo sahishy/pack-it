@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Topbar from '../components/ui/Topbar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -11,21 +11,38 @@ import { useTripItems } from '../contexts/ItemsContext'
 import Return from '../components/ui/Return'
 import { FiPackage } from 'react-icons/fi'
 import { removeItem, updateItemChecked } from '../services/itemService'
+import { deleteTripPlan } from '../services/planService'
 import { getTripById, getTripThumbnail } from '../utils/tripUtils'
 import LoadingScreen from '../components/ui/LoadingScreen'
 import ErrorScreen from '../components/ui/ErrorScreen'
+import { BsStars } from 'react-icons/bs'
+import { FiSearch } from 'react-icons/fi'
+import { FaRegCalendar } from 'react-icons/fa6'
+import { formatDisplayDate } from '../utils/formatters'
+import { getTotalWeight } from '../utils/itemUtils'
+import { useTripPlan } from '../contexts/PlansContext'
 
 const TripOverview = () => {
+    const navigate = useNavigate()
     const { tripId } = useParams()
     const { user, profile, logout } = useAuth()
     const { trips, loading: tripsLoading, error: tripsError } = useTrips()
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
+    const { plan, loading: planLoading } = useTripPlan(tripId)
 
     const [showAddForm, setShowAddForm] = useState(false)
     const [updatingItemIds, setUpdatingItemIds] = useState(new Set())
     const [deletingItemIds, setDeletingItemIds] = useState(new Set())
     const [actionError, setActionError] = useState(null)
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
+    const totalWeight = useMemo(() => getTotalWeight(items), [items])
+    const formattedStartDate = formatDisplayDate(trip?.startDate)
+    const formattedEndDate = formatDisplayDate(trip?.endDate)
+    const formattedTotalWeight = `${totalWeight.toFixed(1)} kg`
+    const formattedBaggageLimit = `${trip?.baggageLimit ?? 0} kg`
+    const isOverWeightLimit = totalWeight > (trip?.baggageLimit ?? 0)
+    const flightClassLabel = trip?.flightClass || '—'
+    const hasExistingPlan = Boolean(plan)
 
     if(!user) {
         return <Navigate to='/login' replace />
@@ -76,6 +93,7 @@ const TripOverview = () => {
             })
 
             await removeItem(itemId)
+            await deleteTripPlan(user.uid, tripId)
         } catch (errorValue) {
             setActionError(errorValue)
         } finally {
@@ -92,19 +110,49 @@ const TripOverview = () => {
             <Topbar displayName={displayName} email={user.email} onLogout={logout} />
 
             <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
-                <Return />
+                <Return text={'Back to home'}/>
                 <>
                     <Card className='overflow-hidden p-0!'>
-                        <div className='h-64 w-full'>
+                        <div className='relative h-48 w-full'>
                             <img
                                 src={getTripThumbnail(trip)}
                                 alt={`${trip.destination} thumbnail`}
                                 className='h-full w-full object-cover'
                             />
+
+                            <div className='absolute inset-0 bg-linear-to-t from-neutral0/70 to-transparent' />
+
+                            <div className='absolute inset-x-0 bottom-0 p-6'>
+                                <h1 className='text-3xl font-semibold text-white'>{trip.destination}</h1>
+                                <p className='mt-1 flex items-center gap-2 text-sm text-white/90'>
+                                    <FaRegCalendar className='text-xs' />
+                                    {formattedStartDate} → {formattedEndDate}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className='p-6'>
-                            <h1 className='text-3xl font-semibold text-neutral0'>{trip.destination}</h1>
+                        <div className='flex flex-wrap items-start justify-between gap-4 p-6 text-center'>
+                            <div className='flex min-w-28 flex-1 flex-col items-center justify-center'>
+                                <p className='text-2xl font-semibold text-primary0'>{items.length}</p>
+                                <p className='text-sm text-neutral1'>Items</p>
+                            </div>
+
+                            <div className='flex min-w-28 flex-1 flex-col items-center justify-center'>
+                                <p className={`text-2xl font-semibold ${isOverWeightLimit ? 'text-negative1' : 'text-positive1'}`}>
+                                    {formattedTotalWeight}
+                                </p>
+                                <p className='text-sm text-neutral1'>Total Weight</p>
+                            </div>
+
+                            <div className='flex min-w-28 flex-1 flex-col items-center justify-center'>
+                                <p className='text-2xl font-semibold text-neutral0'>{formattedBaggageLimit}</p>
+                                <p className='text-sm text-neutral1'>Limit</p>
+                            </div>
+
+                            <div className='flex min-w-28 flex-1 flex-col items-center justify-center'>
+                                <p className='text-2xl font-semibold text-neutral0'>{flightClassLabel}</p>
+                                <p className='text-sm text-neutral1'>Class</p>
+                            </div>
                         </div>
                     </Card>
 
@@ -121,7 +169,7 @@ const TripOverview = () => {
                             <AddItemForm tripId={tripId} setShowAddForm={setShowAddForm} />
                         ) : null}
 
-                        {actionError ? <p className='text-sm text-negative0'>{actionError.message}</p> : null}
+                        {actionError ? <p className='text-sm text-negative1'>{actionError.message}</p> : null}
 
                         {itemsLoading ? (
                             <LoadingScreen text='Loading items...' className='bg-neutral4' />
@@ -147,6 +195,15 @@ const TripOverview = () => {
                             </div>
                         )}
                     </section>
+
+                    <Button
+                        className='flex gap-2'
+                        loading={planLoading}
+                        onClick={() => navigate(`/trips/${tripId}/plan`)}
+                    >
+                        {hasExistingPlan ? <FiSearch /> : <BsStars />}
+                        {hasExistingPlan ? 'View AI Packing Suggestions' : 'Get AI Packing Suggestions'}
+                    </Button>
                 </>
 
                 

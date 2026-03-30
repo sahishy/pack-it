@@ -14,7 +14,7 @@ const Input = ({ label, id, error, className = '', containerClassName = '', ...p
                 {...props}
             />
 
-            {error ? <p className='text-xs text-negative0'>{error}</p> : null}
+            {error ? <p className='text-xs text-negative1'>{error}</p> : null}
         </div>
     )
 }

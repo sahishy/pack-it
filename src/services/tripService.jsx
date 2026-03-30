@@ -6,9 +6,41 @@ import {
     query,
     where,
 } from 'firebase/firestore'
+import { FALLBACK_TRIP_THUMBNAIL } from '../utils/tripUtils'
 
-const getThumbnailUrl = async () => {
-    return 'https://placehold.co/600x400'
+const getThumbnailUrl = async (destination) => {
+
+    const apiKey = import.meta.env.VITE_PEXELS_API_KEY
+    const fallbackThumbnailUrl = FALLBACK_TRIP_THUMBNAIL
+
+    if (!apiKey || !destination) {
+        return fallbackThumbnailUrl
+    }
+
+    try {
+        const params = new URLSearchParams({
+            query: destination,
+            orientation: 'landscape',
+            per_page: '1',
+        })
+
+        const response = await fetch(`https://api.pexels.com/v1/search?${params.toString()}`, {
+            headers: {
+                Authorization: apiKey,
+            },
+        })
+
+        if (!response.ok) {
+            return fallbackThumbnailUrl
+        }
+
+        const data = await response.json()
+        const firstPhoto = data?.photos?.[0]
+
+        return firstPhoto?.src?.landscape ?? fallbackThumbnailUrl
+    } catch {
+        return fallbackThumbnailUrl
+    }
 }
 
 const createTrip = async (uid, tripData) => {
@@ -16,7 +48,7 @@ const createTrip = async (uid, tripData) => {
     const db = getFirestore()
     const tripsRef = collection(db, 'trips')
 
-    const thumbnailUrl = await getThumbnailUrl(tripData)
+    const thumbnailUrl = await getThumbnailUrl(tripData.destination)
 
     const payload = {
         userId: uid,
@@ -28,6 +60,7 @@ const createTrip = async (uid, tripData) => {
         airline: tripData.airline,
         flightClass: tripData.flightClass,
         baggageLimit: Number(tripData.baggageLimit),
+        planId: null,
         createdAt: new Date(),
     }
 

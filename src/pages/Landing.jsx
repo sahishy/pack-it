@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
-import heroImage from '../assets/hero.png'
 import Navbar from '../components/ui/Navbar'
+import { FaSuitcaseRolling } from 'react-icons/fa6'
 
 const features = [
     {
@@ -50,8 +50,8 @@ const Landing = () => {
                     </div>
                 </div>
 
-                <Card className='overflow-hidden p-0'>
-                    <img src={heroImage} alt='Traveler planning packing list' className='h-full w-full object-cover' />
+                <Card className='overflow-hidden p-0 flex items-center justify-center py-32'>
+                    <FaSuitcaseRolling className='text-9xl text-primary0'/>
                 </Card>
 
             </section>

@@ -19,7 +19,7 @@ const Button = ({
         <button
             type={type}
             disabled={isDisabled}
-            className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition 
+            className={`inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-medium transition
                 ${VARIANT_STYLES[variant] ?? VARIANT_STYLES.primary} 
                 disabled:cursor-not-allowed disabled:opacity-60 
                 cursor-pointer

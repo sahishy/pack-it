@@ -6,6 +6,8 @@ import Signup from './pages/Signup'
 import Home from './pages/Home'
 import NewTrip from './pages/NewTrip'
 import TripOverview from './pages/TripOverview'
+import PlanOverview from './pages/PlanOverview'
+import StrategyOverview from './pages/StrategyOverview'
 import LoadingScreen from './components/ui/LoadingScreen'
 
 const ProtectedRoute = ({ children }) => {
@@ -93,6 +95,24 @@ const App = () => {
 				element={
 					<ProtectedRoute>
 						<TripOverview />
+					</ProtectedRoute>
+				}
+			/>
+
+			<Route
+				path='/trips/:tripId/plan'
+				element={
+					<ProtectedRoute>
+						<PlanOverview />
+					</ProtectedRoute>
+				}
+			/>
+
+			<Route
+				path='/trips/:tripId/plan/strategy'
+				element={
+					<ProtectedRoute>
+						<StrategyOverview />
 					</ProtectedRoute>
 				}
 			/>

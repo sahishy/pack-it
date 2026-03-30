@@ -11,7 +11,6 @@ html {
     -webkit-appearance: none;
     margin: 0;
 }
-
 .no-spinner[type='number'] {
     -moz-appearance: textfield;
     appearance: textfield;
@@ -32,7 +31,17 @@ html {
         --color-neutral4: #F3F4F6;
         --color-neutral5: white;
 
-        --color-negative0: #FF0000;
+        --color-positive0: #166534;
+        --color-positive1: #16a34a;
+        --color-positive2: #dcfce7;
+
+        --color-negative0: #7f1d1d;
+        --color-negative1: #dc2626;
+        --color-negative2: #fecaca;
+
+        --color-warning0: #b45309;
+        --color-warning1: #d97706;
+        --color-warning2: #fef9c3;
 
 		--color-shadow: rgba(0, 0, 0, 0.02);
 

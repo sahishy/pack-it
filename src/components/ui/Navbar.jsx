@@ -12,11 +12,11 @@ const Navbar = () => {
 
                 <nav className='flex items-center gap-2'>
                     <Link to='/login'>
-                        <Button variant='secondary'>Log In</Button>
+                        <Button variant='secondary' className='px-3! py-2!'>Log In</Button>
                     </Link>
 
                     <Link to='/signup'>
-                        <Button>Sign Up</Button>
+                        <Button className='px-3! py-2!'>Sign Up</Button>
                     </Link>
                 </nav>
             </div>

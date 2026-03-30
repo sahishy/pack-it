@@ -113,7 +113,7 @@ const NewTrip = () => {
 
     }
 
-    const requiredAsterisk = <span className='text-negative0'>*</span>
+    const requiredAsterisk = <span className='text-negative1'>*</span>
 
     return (
         <main className='min-h-screen'>
@@ -221,10 +221,10 @@ const NewTrip = () => {
                             />
                         </div>
 
-                        {error ? <p className='text-sm text-negative0'>{error}</p> : null}
-                        {createError ? <p className='text-sm text-negative0'>{createError.message}</p> : null}
+                        {error ? <p className='text-sm text-negative1'>{error}</p> : null}
+                        {createError ? <p className='text-sm text-negative1'>{createError.message}</p> : null}
 
-                        <Button type='submit' loading={creating} disabled={hasMissingRequiredField} className='flex gap-3 mt-3'>
+                        <Button type='submit' loading={creating} disabled={hasMissingRequiredField} className='flex gap-2 mt-3'>
                             <BsStars />
                             Create Trip
                         </Button>
