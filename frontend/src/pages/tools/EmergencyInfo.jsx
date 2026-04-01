@@ -42,7 +42,7 @@ const EmergencyInfo = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -51,15 +51,15 @@ const EmergencyInfo = () => {
                     <p className='mt-1 text-sm text-neutral1'>Store critical personal details for travel emergencies.</p>
                 </div>
 
-                <Card className='border-none bg-linear-to-r from-[#ff5f4a] to-[#ff8a00] text-neutral5'>
+                <Card className='border-none bg-linear-to-r from-[#ff5f4a] to-[#ff8a00]'>
                     <div className='flex items-start gap-4'>
                         <div className='pt-1'>
-                            <FaCircleExclamation className='text-3xl text-neutral5' />
+                            <FaCircleExclamation className='text-3xl text-white' />
                         </div>
 
                         <div className='flex flex-col gap-2'>
-                            <h2 className='text-xl font-semibold text-neutral5'>Critical Information</h2>
-                            <p className='text-sm leading-relaxed text-neutral5/95'>
+                            <h2 className='text-xl font-semibold text-white'>Critical Information</h2>
+                            <p className='text-sm leading-relaxed text-white/80'>
                                 This information stays on your device and can be accessed offline. Keep it updated for emergencies during travel.
                             </p>
                         </div>

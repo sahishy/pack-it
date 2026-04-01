@@ -42,7 +42,7 @@ const PlugGuide = () => {
     const filteredCountries = useMemo(() => searchPlugCountries(countryQuery), [countryQuery])
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -51,15 +51,15 @@ const PlugGuide = () => {
                     <p className='mt-1 text-sm text-neutral1'>Check plug types, voltage, and frequency for any destination.</p>
                 </div>
 
-                <Card className='border-none bg-linear-to-r from-[#8d5cf6] to-[#e64aab] text-neutral5'>
+                <Card className='border-none bg-linear-to-r from-[#8d5cf6] to-[#e64aab]'>
                     <div className='flex items-start gap-4'>
                         <div className='pt-1'>
-                            <FaBoltLightning className='text-2xl text-neutral5' />
+                            <FaBoltLightning className='text-2xl text-white' />
                         </div>
 
                         <div className='flex flex-col gap-2'>
-                            <h2 className='text-xl font-semibold text-neutral5'>Travel Adapter Tip</h2>
-                            <p className='text-sm leading-relaxed text-neutral5/95'>
+                            <h2 className='text-xl font-semibold text-white'>Travel Adapter Tip</h2>
+                            <p className='text-sm leading-relaxed text-white/80'>
                                 Consider getting a universal travel adapter that works in multiple countries. Always check if your devices support dual voltage (110-240V).
                             </p>
                         </div>

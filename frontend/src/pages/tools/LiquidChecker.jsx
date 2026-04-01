@@ -29,7 +29,7 @@ const LiquidChecker = () => {
     )
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -38,15 +38,15 @@ const LiquidChecker = () => {
                     <p className='mt-1 text-sm text-neutral1'>Check if your liquid containers are carry-on compliant.</p>
                 </div>
 
-                <Card className='border-none bg-linear-to-r from-[#20b9d8] to-[#3a7df7] text-neutral5'>
+                <Card className='border-none bg-linear-to-r from-[#20b9d8] to-[#3a7df7]'>
                     <div className='flex items-start gap-4'>
                         <div className='pt-1'>
-                            <FaDroplet className='text-2xl text-neutral5' />
+                            <FaDroplet className='text-2xl text-white' />
                         </div>
 
                         <div className='flex flex-col gap-2'>
-                            <h2 className='text-xl font-semibold text-neutral5'>The 3-1-1 Rule</h2>
-                            <p className='text-sm leading-relaxed text-neutral5/95'>
+                            <h2 className='text-xl font-semibold text-white'>The 3-1-1 Rule</h2>
+                            <p className='text-sm leading-relaxed text-white/80'>
                                 3 ounces (100ml) or less per container
                                 <br />
                                 1 quart-size clear plastic bag

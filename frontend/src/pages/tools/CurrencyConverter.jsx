@@ -74,7 +74,7 @@ const CurrencyConverter = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -83,15 +83,15 @@ const CurrencyConverter = () => {
                     <p className='mt-1 text-sm text-neutral1'>Convert values across world currencies with local exchange-rate data.</p>
                 </div>
 
-                <Card className='border-none bg-linear-to-r from-[#2bc96b] to-[#1fb38e] text-neutral5'>
+                <Card className='border-none bg-linear-to-r from-[#2bc96b] to-[#1fb38e] text-white'>
                     <div className='flex items-start gap-4'>
                         <div className='pt-1'>
-                            <FaDollarSign className='text-2xl text-neutral5' />
+                            <FaDollarSign className='text-2xl text-white' />
                         </div>
 
                         <div className='flex flex-col gap-2'>
-                            <h2 className='text-xl font-semibold text-neutral5'>Rate Notice</h2>
-                            <p className='text-sm leading-relaxed text-neutral5/95'>
+                            <h2 className='text-xl font-semibold text-white'>Rate Notice</h2>
+                            <p className='text-sm leading-relaxed text-white/80'>
                                 This converter works fully offline using bundled exchange-rate data. Rates were last updated on 12/31/25 and may differ from live market values.
                             </p>
                         </div>
@@ -182,7 +182,7 @@ const CurrencyConverter = () => {
                         </button>
 
                         <div className='relative'>
-                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-2xl font-semibold text-neutral5'>
+                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-2xl font-semibold text-white'>
                                 {toCurrency?.symbol ?? '$'}
                             </span>
 
@@ -191,7 +191,7 @@ const CurrencyConverter = () => {
                                 type='text'
                                 value={formatAmount(conversion.convertedAmount)}
                                 readOnly
-                                className='no-spinner border-none! bg-linear-to-r from-[#2bc96b] to-[#1fb38e] py-4 pl-14 pr-14 text-center text-4xl! leading-none! font-semibold! text-neutral5!'
+                                className='no-spinner border-none! bg-linear-to-r from-[#2bc96b] to-[#1fb38e] py-4 pl-14 pr-14 text-center text-4xl! leading-none! font-semibold! text-white!'
                             />
                         </div>
                     </section>

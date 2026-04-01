@@ -4,7 +4,7 @@ import LogoLarge from '../../assets/logo_lg.png'
 
 const Navbar = () => {
     return (
-        <header className='sticky top-0 border-b border-neutral3 bg-white/80 backdrop-blur'>
+        <header className='sticky top-0 border-b border-neutral3 bg-neutral5/80 backdrop-blur'>
             <div className='mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-3'>
                 <Link to='/' className='text-lg font-semibold tracking-tight text-neutral0'>
                     <img src={LogoLarge} alt='Pack-It Logo' className='w-24' />

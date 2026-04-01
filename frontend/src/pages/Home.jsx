@@ -43,33 +43,33 @@ const Home = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
                 <div className='m-6 flex max-w-4xl flex-col gap-6 px-6 py-10 rounded-xl bg-linear-to-r from-primary0 to-primary1 lg:m-auto lg:bg-none'>
                     <div className='flex flex-col gap-2 text-center items-center lg:text-left lg:items-start'>
-                        <h2 className='flex gap-2 items-center text-sm text-neutral3'><PiHandWavingFill className='text-lg'/> Ready for adventure?</h2>
-                        <h1 className='text-4xl lg:text-5xl font-bold text-neutral4'>Welcome to Pack-It</h1>
-                        <p className='text-neutral3'>Your intelligent travel packing assistant</p>
+                        <h2 className='flex gap-2 items-center text-sm text-white/80'><PiHandWavingFill className='text-lg'/> Ready for adventure?</h2>
+                        <h1 className='text-4xl lg:text-5xl font-bold text-white'>Welcome to Pack-It</h1>
+                        <p className='text-white/80'>Your intelligent travel packing assistant</p>
                     </div>
 
                     <div className='flex flex-col flex-nowrap gap-4 items-center justify-center lg:justify-start lg:flex-row lg:items-start lg:gap-6'>
                         <div className='flex items-center gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-neutral5/20 items-center justify-center'>
-                                <FaSuitcaseRolling className='text-xl text-neutral5' />
+                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-white/20 items-center justify-center'>
+                                <FaSuitcaseRolling className='text-xl text-white' />
                             </div>
                             <div>
-                                <p className='text-xl font-bold text-neutral4'>{totalTrips}</p>
-                                <p className='text-sm text-neutral4/90'>Total Trip{totalTrips !== 1 ? 's' : ''}</p>
+                                <p className='text-xl font-bold text-white'>{totalTrips}</p>
+                                <p className='text-sm text-white/80'>Total Trip{totalTrips !== 1 ? 's' : ''}</p>
                             </div>
                         </div>
 
                         <div className='flex items-center gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-neutral5/20 items-center justify-center'>
-                                <FaArrowTrendUp className='text-xl text-neutral5' />
+                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-white/20 items-center justify-center'>
+                                <FaArrowTrendUp className='text-xl text-white' />
                             </div>
                             <div>
-                                <p className='text-xl font-bold text-neutral4'>{upcomingTrips}</p>
-                                <p className='text-sm text-neutral4/90'>Upcoming Trip{upcomingTrips !== 1 ? 's' : ''}</p>
+                                <p className='text-xl font-bold text-white'>{upcomingTrips}</p>
+                                <p className='text-sm text-white/80'>Upcoming Trip{upcomingTrips !== 1 ? 's' : ''}</p>
                             </div>
                         </div>
                     </div>

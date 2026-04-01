@@ -104,7 +104,7 @@ const UnitConverter = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -176,7 +176,7 @@ const UnitConverter = () => {
                             type='text'
                             value={formatConvertedValue(convertedValue)}
                             readOnly
-                            className='no-spinner border-none! bg-linear-to-r from-[#ff7a1a] to-[#ff4a3d] py-4 text-center text-4xl! leading-none! font-semibold! text-neutral5!'
+                            className='no-spinner border-none! bg-linear-to-r from-[#ff7a1a] to-[#ff4a3d] py-4 text-center text-4xl! leading-none! font-semibold! text-white!'
                         />
                     </section>
                 </Card>

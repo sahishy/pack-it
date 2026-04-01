@@ -36,7 +36,7 @@ const TabSelector = ({
                         type='button'
                         onClick={() => onChange?.(tab.value)}
                         className={`relative z-10 rounded-full px-3 py-2 text-sm font-medium transition cursor-pointer ${isActive
-                            ? 'text-neutral5'
+                            ? 'text-white'
                             : 'text-neutral1 hover:text-neutral0'
                         }`}
                     >

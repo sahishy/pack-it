@@ -24,6 +24,7 @@ import { getTotalWeight } from '../utils/itemUtils'
 import { useTripPlan } from '../contexts/PlansContext'
 import Dropdown from '../components/popover/Dropdown'
 import { TbDots } from 'react-icons/tb'
+import useWeightFormatter from '../hooks/useWeightFormatter'
 
 const TripOverview = () => {
     const navigate = useNavigate()
@@ -37,12 +38,13 @@ const TripOverview = () => {
     const [updatingItemIds, setUpdatingItemIds] = useState(new Set())
     const [deletingItemIds, setDeletingItemIds] = useState(new Set())
     const [actionError, setActionError] = useState(null)
+    const { formatWeight } = useWeightFormatter()
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
     const formattedStartDate = formatDisplayDate(trip?.startDate)
     const formattedEndDate = formatDisplayDate(trip?.endDate)
-    const formattedTotalWeight = `${totalWeight.toFixed(1)} kg`
-    const formattedBaggageLimit = `${trip?.baggageLimit ?? 0} kg`
+    const formattedTotalWeight = formatWeight(totalWeight, { decimals: 2 })
+    const formattedBaggageLimit = formatWeight(trip?.baggageLimit ?? 0, { decimals: 2 })
     const isOverWeightLimit = totalWeight > (trip?.baggageLimit ?? 0)
     const flightClassLabel = trip?.flightClass || '—'
     const hasExistingPlan = Boolean(plan)
@@ -124,7 +126,7 @@ const TripOverview = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <Topbar displayName={displayName} email={user.email} onLogout={logout} />
 
             <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
@@ -138,7 +140,7 @@ const TripOverview = () => {
                                 className='h-full w-full object-cover'
                             />
 
-                            <div className='absolute inset-0 bg-linear-to-t from-neutral0/70 to-transparent' />
+                            <div className='absolute inset-0 bg-linear-to-t from-black/70 to-transparent' />
 
                             <div className='absolute inset-x-0 bottom-0 p-6'>
                                 <h1 className='text-3xl font-semibold text-white'>{trip.destination}</h1>

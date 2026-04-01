@@ -55,13 +55,13 @@ const tools = [
 const Tools = () => {
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
                 <div className='m-6 flex max-w-4xl flex-col gap-6 px-6 py-10 rounded-xl bg-linear-to-r from-primary0 to-primary1 lg:m-auto lg:bg-none'>
                     <div className='flex flex-col gap-2 items-center lg:items-start'>
-                        <h2 className='flex gap-2 items-center text-sm text-neutral3'><FaWrench className='text-lg'/>No Wi-Fi? No problem.</h2>
-                        <h1 className='text-4xl lg:text-5xl font-bold text-neutral4'>Travel Tools</h1>
-                        <p className='text-neutral4/90'>Helpful offline utilities for your journey</p>
+                        <h2 className='flex gap-2 items-center text-sm text-white/80'><FaWrench className='text-lg'/>No Wi-Fi? No problem.</h2>
+                        <h1 className='text-4xl lg:text-5xl font-bold text-white'>Travel Tools</h1>
+                        <p className='text-white/80'>Helpful offline utilities for your journey</p>
                     </div>
                 </div>
             </section>

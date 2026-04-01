@@ -1,5 +1,5 @@
 const VARIANT_STYLES = {
-    primary: 'bg-linear-to-t from-primary0 to-primary1 text-neutral5 border border-primary0 hover:to-primary0',
+    primary: 'bg-linear-to-t from-primary0 to-primary1 text-white border border-primary0 hover:to-primary0',
     secondary: 'bg-linear-to-t from-neutral4 to-neutral5 text-neutral0 border border-neutral2 hover:to-neutral4'
 }
 

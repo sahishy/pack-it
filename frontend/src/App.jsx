@@ -22,6 +22,17 @@ import LoadingScreen from './components/ui/LoadingScreen'
 import Topbar from './components/ui/Topbar'
 import BottomBar from './components/ui/BottomBar'
 
+const resolveTheme = (preference) => {
+
+	if(preference === 'light' || preference === 'dark') {
+		return preference
+	}
+
+	// return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+	return 'light';
+	
+}
+
 const ProtectedRoute = ({ children }) => {
 
 	const { user, loading } = useAuth()
@@ -82,6 +93,27 @@ const ScrollToTop = () => {
 }
 
 const App = () => {
+	const { profile } = useAuth()
+
+	useEffect(() => {
+		const preference = profile?.preferences?.theme ?? 'system'
+		const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+
+		const applyTheme = () => {
+			document.documentElement.dataset.theme = resolveTheme(preference)
+		}
+
+		applyTheme()
+
+		if(preference !== 'system') {
+			return undefined
+		}
+
+		const handleSystemThemeChange = () => applyTheme()
+
+		mediaQuery.addEventListener('change', handleSystemThemeChange)
+		return () => mediaQuery.removeEventListener('change', handleSystemThemeChange)
+	}, [profile?.preferences?.theme])
 
 	return (
 		<>

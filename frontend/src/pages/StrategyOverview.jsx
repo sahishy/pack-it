@@ -17,6 +17,7 @@ import { getCategoryEmoji, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils
 import { TbConfettiFilled } from 'react-icons/tb'
 import { HiOutlineLocationMarker } from 'react-icons/hi'
 import { setTripPackedStatus } from '../services/tripService'
+import useWeightFormatter from '../hooks/useWeightFormatter'
 
 const StrategyOverview = () => {
 
@@ -28,6 +29,7 @@ const StrategyOverview = () => {
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const [isCompleted, setIsCompleted] = useState(false)
+    const { formatWeight } = useWeightFormatter()
 
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
     const steps = plan?.strategy?.steps ?? []
@@ -80,7 +82,7 @@ const StrategyOverview = () => {
 
     if (totalSteps === 0) {
         return (
-            <main className='min-h-screen'>
+            <main className='min-h-screen bg-neutral5'>
                 <Topbar displayName={displayName} email={user.email} onLogout={logout} />
 
                 <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10'>
@@ -131,7 +133,7 @@ const StrategyOverview = () => {
                             label='Duration'
                         />
                         <SummaryMetric icon={<FiPackage className='text-3xl text-orange-500' />} value={items.length} label='Items' />
-                        <SummaryMetric icon={<FaScaleBalanced className='text-3xl text-positive1' />} value={`${totalWeight.toFixed(1)} kg`} label='Total Weight' />
+                        <SummaryMetric icon={<FaScaleBalanced className='text-3xl text-positive1' />} value={formatWeight(totalWeight, { decimals: 2 })} label='Total Weight' />
                     </Card>
 
                     <Card className='border border-positive1/40 bg-positive1/10 p-5'>
@@ -144,7 +146,7 @@ const StrategyOverview = () => {
                                     Perfect! Within baggage limit
                                 </h2>
                                 <p className='text-sm text-positive0/80'>
-                                    {totalWeight.toFixed(1)} kg / {baggageLimit.toFixed(1)} kg
+                                    {formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(baggageLimit, { decimals: 2 })}
                                 </p>
                             </div>
                         </div>
@@ -170,7 +172,7 @@ const StrategyOverview = () => {
                                                 <FaCircleCheck className='text-positive1' />
                                                 {item.name}
                                             </p>
-                                            <p className='text-sm font-medium text-neutral1'>{Number(item.weight ?? 0).toFixed(2)} kg</p>
+                                            <p className='text-sm font-medium text-neutral1'>{formatWeight(item.weight ?? 0, { decimals: 2 })}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -212,7 +214,7 @@ const StrategyOverview = () => {
 
                 <Card className='flex min-h-80 flex-col items-center justify-center gap-5 text-center'>
                     <div className='flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-r from-primary0 to-primary1'>
-                        <span className='text-2xl font-semibold text-neutral5'>{currentStep.index}</span>
+                        <span className='text-2xl font-semibold text-white'>{currentStep.index}</span>
                     </div>
 
                     <p className='max-w-2xl text-lg text-neutral0/80'>{currentStep.description}</p>

@@ -118,7 +118,7 @@ const Login = () => {
 	}
 
 	return (
-		<main className='min-h-screen bg-neutral4'>
+		<main className='min-h-screen bg-neutral5'>
 
 			<Navbar />
 
@@ -127,7 +127,7 @@ const Login = () => {
 					
 					<div className='flex flex-col gap-3 items-center'>
 						<div className='justify-self-center p-4 bg-linear-to-t from-primary0 to-primary1 rounded-full'>
-							<FaSignInAlt className='text-neutral5 text-3xl' />
+							<FaSignInAlt className='text-white text-3xl' />
 						</div>
 						<div className='flex flex-col gap-1 text-center'>
 							<h1 className='text-2xl font-semibold text-neutral0'>Welcome back</h1>

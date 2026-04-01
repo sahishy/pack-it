@@ -22,7 +22,7 @@ const features = [
 const Landing = () => {
 
     return (
-        <main className='min-h-screen bg-neutral4 text-neutral0'>
+        <main className='min-h-screen bg-neutral5 text-neutral0'>
 
             <Navbar />
 

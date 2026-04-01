@@ -14,6 +14,8 @@ import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
 import { BsStars } from "react-icons/bs";
 import Return from '../components/ui/Return'
 import { FLIGHT_CLASS_OPTIONS, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
+import useWeightFormatter from '../hooks/useWeightFormatter'
+import { convertWeightToKg } from '../utils/measurementUtils'
 
 const NewTrip = () => {
 
@@ -33,6 +35,7 @@ const NewTrip = () => {
     const [error, setError] = useState('')
     const [isAirlinePaletteOpen, setIsAirlinePaletteOpen] = useState(false)
     const [airlineQuery, setAirlineQuery] = useState('')
+    const { weightUnitLabel, measurementSystem } = useWeightFormatter()
 
     const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
     const selectedAirline = useMemo(() => getAirlineDisplayById(formData.airline), [formData.airline])
@@ -94,7 +97,10 @@ const NewTrip = () => {
         }
 
         try {
-            await addTrip(formData)
+            await addTrip({
+                ...formData,
+                baggageLimit: convertWeightToKg(formData.baggageLimit, measurementSystem),
+            })
             navigate('/home')
         } catch {
             setError('Unable to create trip right now. Please try again.')
@@ -105,7 +111,7 @@ const NewTrip = () => {
     const requiredAsterisk = <span className='text-negative1'>*</span>
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
 
             <div className='flex flex-col gap-6 mx-auto w-full max-w-3xl px-4 py-10'>
@@ -162,12 +168,14 @@ const NewTrip = () => {
                                     placeholder='Select trip purpose'
                                 />
                                 <Counter
-                                    label={<><span>Baggage Limit (kg) </span>{requiredAsterisk}</>}
+                                    label={<><span>Baggage Limit ({weightUnitLabel}) </span>{requiredAsterisk}</>}
                                     id='baggageLimit'
                                     value={formData.baggageLimit}
                                     containerClassName='flex-1'
                                     onChange={(baggageLimit) => setFormData((prev) => ({ ...prev, baggageLimit }))}
                                     min={1}
+                                    allowDecimal
+                                    step={0.01}
                                 />
                             </div>
 

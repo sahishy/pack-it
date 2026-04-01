@@ -2,9 +2,11 @@ import Card from '../ui/Card'
 import { FiTrash2 } from 'react-icons/fi'
 import { getCategoryEmoji } from '../../utils/itemUtils'
 import Checkbox from '../ui/Checkbox'
+import useWeightFormatter from '../../hooks/useWeightFormatter'
 
 const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting = false }) => {
     const isBusy = isUpdating || isDeleting
+    const { formatWeight } = useWeightFormatter()
 
     return (
         <Card className='py-3! px-4!'>
@@ -29,7 +31,7 @@ const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting 
                             <div className='flex flex-wrap items-center gap-2 text-xs text-neutral1'>
                                 <p className='capitalize'>{item.category}</p>
                                 {item.quantity > 1 ? <p className='font-medium'>x{item.quantity}</p> : null}
-                                <p className='text-primary0 font-medium'>{Number(item.weight ?? 0).toFixed(2)} kg</p>
+                                <p className='text-primary0 font-medium'>{formatWeight(item.weight ?? 0, { decimals: 2 })}</p>
                             </div>
                         </div>
                     </div>

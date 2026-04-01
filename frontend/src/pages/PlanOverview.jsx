@@ -14,6 +14,7 @@ import { useTripItems } from '../contexts/ItemsContext'
 import { usePlans, useTripPlan } from '../contexts/PlansContext'
 import { getTripById } from '../utils/tripUtils'
 import { getTotalWeight } from '../utils/itemUtils'
+import useWeightFormatter from '../hooks/useWeightFormatter'
 
 const PlanOverview = () => {
     const { tripId } = useParams()
@@ -32,6 +33,7 @@ const PlanOverview = () => {
     } = usePlans()
 
     const [actionError, setActionError] = useState(null)
+    const { formatWeight } = useWeightFormatter()
 
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
     const planResult = plan?.result ?? null
@@ -108,14 +110,14 @@ const PlanOverview = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <Topbar displayName={displayName} email={user.email} onLogout={logout} />
             <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
                 <Return text='Back to trip' link={`/trips/${tripId}`} />
 
                 <section className='flex flex-col items-center gap-3 text-center'>
                     <div className='rounded-full bg-linear-to-t from-primary0 to-primary1 p-4'>
-                        <BsStars className='text-2xl text-neutral5' />
+                        <BsStars className='text-2xl text-white' />
                     </div>
                     <h1 className='text-2xl font-semibold text-neutral0'>AI Packing Analysis</h1>
                     <p className='text-sm text-neutral1'>Smart recommendations for your {trip.destination} trip</p>
@@ -147,7 +149,7 @@ const PlanOverview = () => {
                             {!isResultReady ? 'Analyzing...' : isSuccess ? 'Within Limit' : 'Over Limit'}
                         </p>
                         <p className={`text-sm ${!isResultReady ? 'text-neutral1' : isSuccess ? 'text-positive1' : 'text-negative1'}`}>
-                            Current weight: {totalWeight.toFixed(1)} kg / {baggageLimit.toFixed(1)} kg limit
+                            Current weight: {formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(baggageLimit, { decimals: 2 })} limit
                         </p>
                     </div>
                 </Card>

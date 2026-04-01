@@ -15,6 +15,8 @@ import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
 import { FLIGHT_CLASS_OPTIONS, getTripById, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
 import LoadingScreen from '../components/ui/LoadingScreen'
 import ErrorScreen from '../components/ui/ErrorScreen'
+import useWeightFormatter from '../hooks/useWeightFormatter'
+import { convertWeightToKg } from '../utils/measurementUtils'
 
 const EditTrip = () => {
     const navigate = useNavigate()
@@ -33,6 +35,7 @@ const EditTrip = () => {
     const [error, setError] = useState('')
     const [isAirlinePaletteOpen, setIsAirlinePaletteOpen] = useState(false)
     const [airlineQuery, setAirlineQuery] = useState('')
+    const { weightUnitLabel, measurementSystem, formatWeightValue } = useWeightFormatter()
     const [formData, setFormData] = useState(() => ({
         destination: '',
         startDate: '',
@@ -57,9 +60,9 @@ const EditTrip = () => {
             tripPurpose: trip.tripPurpose ?? '',
             airline: trip.airline ?? '',
             flightClass: trip.flightClass ?? '',
-            baggageLimit: trip.baggageLimit ?? '',
+            baggageLimit: formatWeightValue(trip.baggageLimit ?? '', { decimals: 2 }),
         })
-    }, [trip])
+    }, [formatWeightValue, measurementSystem, trip])
 
     const selectedAirline = useMemo(() => getAirlineDisplayById(formData.airline), [formData.airline])
     const filteredAirlines = useMemo(() => searchAirlines(airlineQuery).slice(0, 200), [airlineQuery])
@@ -115,7 +118,10 @@ const EditTrip = () => {
         }
 
         try {
-            await editTrip(tripId, formData)
+            await editTrip(tripId, {
+                ...formData,
+                baggageLimit: convertWeightToKg(formData.baggageLimit, measurementSystem),
+            })
             navigate(`/trips/${tripId}`)
         } catch {
             setError('Unable to update trip right now. Please try again.')
@@ -137,7 +143,7 @@ const EditTrip = () => {
     const requiredAsterisk = <span className='text-negative1'>*</span>
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
 
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10'>
@@ -188,12 +194,14 @@ const EditTrip = () => {
                                 placeholder='Select trip purpose'
                             />
                             <Counter
-                                label={<><span>Baggage Limit (kg) </span>{requiredAsterisk}</>}
+                                label={<><span>Baggage Limit ({weightUnitLabel}) </span>{requiredAsterisk}</>}
                                 id='baggageLimit'
                                 value={formData.baggageLimit}
                                 containerClassName='flex-1'
                                 onChange={(baggageLimit) => setFormData((prev) => ({ ...prev, baggageLimit }))}
                                 min={1}
+                                allowDecimal
+                                step={0.01}
                             />
                         </div>
 

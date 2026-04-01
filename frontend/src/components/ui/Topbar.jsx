@@ -9,7 +9,7 @@ const NavTab = ({ to, children }) => {
             className={({ isActive }) => (
                 `rounded-full px-4 py-1.5 text-sm font-medium transition ${
                     isActive
-                        ? 'bg-primary0 text-neutral4'
+                        ? 'bg-primary0 text-white'
                         : 'bg-transparent text-neutral1 hover:bg-neutral0/4'
                 }`
             )}
@@ -22,7 +22,7 @@ const NavTab = ({ to, children }) => {
 const Topbar = ({ displayName, email, onLogout }) => {
 
     return (
-        <header className='sticky top-0 border-b z-60 border-neutral3 bg-white/80 backdrop-blur'>
+        <header className='sticky top-0 border-b z-60 border-neutral3 bg-neutral5/80 backdrop-blur'>
             <div className='relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-2'>
                 <Link to='/' className='text-lg font-semibold tracking-tight text-neutral0'>
                     <img src={LogoLarge} alt='Pack-It Logo' className='w-24' />

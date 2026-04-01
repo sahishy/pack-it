@@ -10,6 +10,8 @@ const Counter = ({
     onChange,
     min = 1,
     max = 999,
+    allowDecimal = false,
+    step = 1,
     className = '',
     containerClassName = '',
 }) => {
@@ -23,13 +25,23 @@ const Counter = ({
         trimmedDraftValue === '' ||
         (Number.isFinite(parsedDraftValue) && parsedDraftValue === 0)
     const localValue = Number.isFinite(parsedDraftValue) ? parsedDraftValue : min
+    const resolvedStep = Number.isFinite(Number(step)) && Number(step) > 0 ? Number(step) : 1
+    const stepDecimals = allowDecimal
+        ? ((String(resolvedStep).split('.')[1] ?? '').length)
+        : 0
+    const allowedDecimalPlaces = allowDecimal ? (stepDecimals || 2) : 0
+    const contentMinWidthClass = allowDecimal ? 'min-w-52' : 'min-w-44'
+    const inputWidthClass = allowDecimal ? 'w-24' : 'w-16'
 
     useEffect(() => {
         setDraftValue(String(currentValue))
     }, [currentValue])
 
     const updateValue = (nextValue) => {
-        const safeValue = Math.min(max, Math.max(min, nextValue))
+        const roundedValue = allowDecimal
+            ? Number(nextValue.toFixed(stepDecimals || 2))
+            : Math.trunc(nextValue)
+        const safeValue = Math.min(max, Math.max(min, roundedValue))
         onChange?.(safeValue)
     }
 
@@ -63,11 +75,14 @@ const Counter = ({
             return
         }
 
-        if (!/^\d+$/.test(nextValue)) {
+        const integerPattern = /^\d+$/
+        const decimalPattern = /^\d+(\.\d*)?$/
+
+        if (!(allowDecimal ? decimalPattern.test(nextValue) : integerPattern.test(nextValue))) {
             return
         }
 
-        if (nextValue.length > String(max).length) {
+        if (!allowDecimal && nextValue.length > String(max).length) {
             return
         }
 
@@ -76,7 +91,10 @@ const Counter = ({
 
     const adjustLocalValue = (delta) => {
         const nextValue = Math.min(max, Math.max(min, localValue + delta))
-        setDraftValue(String(nextValue))
+        const normalizedValue = allowDecimal
+            ? Number(nextValue.toFixed(allowedDecimalPlaces)).toString()
+            : String(Math.trunc(nextValue))
+        setDraftValue(normalizedValue)
     }
 
     return (
@@ -88,7 +106,7 @@ const Counter = ({
             ) : null}
 
             <BasePopover
-                contentClassName='min-w-44 rounded-xl border border-neutral3 bg-neutral5 p-3 shadow-md shadow-shadow'
+                contentClassName={`${contentMinWidthClass} rounded-xl border border-neutral3 bg-neutral5 p-3 shadow-md shadow-shadow`}
                 trigger={({ open, toggle }) => (
                     <button
                         id={id}
@@ -114,7 +132,7 @@ const Counter = ({
                                 type='button'
                                 variant='secondary'
                                 className='p-0! h-10 w-10 text-xs! text-neutral1!'
-                                onClick={() => adjustLocalValue(-1)}
+                                onClick={() => adjustLocalValue(-resolvedStep)}
                                 disabled={localValue <= min}
                                 aria-label='Decrease quantity'
                             >
@@ -124,7 +142,8 @@ const Counter = ({
                             <input
                                 type='number'
                                 inputMode='numeric'
-                                pattern='[0-9]*'
+                                pattern={allowDecimal ? '[0-9]*[.]?[0-9]*' : '[0-9]*'}
+                                step={allowDecimal ? resolvedStep : 1}
                                 value={draftValue}
                                 onChange={handleInputChange}
                                 onKeyDown={(event) => {
@@ -132,7 +151,7 @@ const Counter = ({
                                         event.preventDefault()
                                     }
                                 }}
-                                className='no-spinner h-10 w-16 bg-transparent px-1 text-center text-2xl font-bold text-neutral0 outline-none'
+                                className={`no-spinner h-10 ${inputWidthClass} bg-transparent px-1 text-center text-2xl font-bold text-neutral0 outline-none`}
                                 aria-label='Quantity'
                             />
 
@@ -140,7 +159,7 @@ const Counter = ({
                                 type='button'
                                 variant='secondary'
                                 className='p-0! h-10 w-10 text-xs! text-neutral1!'
-                                onClick={() => adjustLocalValue(1)}
+                                onClick={() => adjustLocalValue(resolvedStep)}
                                 disabled={localValue >= max}
                                 aria-label='Increase quantity'
                             >

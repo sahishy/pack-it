@@ -26,7 +26,7 @@ const BottomBar = () => {
 
     return (
         <nav
-            className='fixed w-full bottom-0 z-60 border-t border-neutral3 bg-white/80 backdrop-blur pt-4 pb-[max(env(safe-area-inset-bottom),2rem)] lg:hidden'
+            className='fixed w-full bottom-0 z-60 border-t border-neutral3 bg-neutral5/80 backdrop-blur pt-4 pb-[max(env(safe-area-inset-bottom),2rem)] lg:hidden'
         >
             <div className='mx-auto grid w-full max-w-4xl grid-cols-3 items-center'>
                 <div className='flex justify-center'>

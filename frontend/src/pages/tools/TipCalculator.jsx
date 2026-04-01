@@ -56,7 +56,7 @@ const TipCalculator = () => {
     )
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
@@ -141,7 +141,7 @@ const TipCalculator = () => {
                                     type='button'
                                     onClick={() => setTipPercent(preset)}
                                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
-                                        ? 'border-primary0 bg-primary0 text-neutral5'
+                                        ? 'border-primary0 bg-primary0 text-white'
                                         : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
                                     }`}
                                 >
@@ -179,7 +179,7 @@ const TipCalculator = () => {
                                     type='button'
                                     onClick={() => setSplitBetween(preset)}
                                     className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
-                                        ? 'border-primary0 bg-primary0 text-neutral5'
+                                        ? 'border-primary0 bg-primary0 text-white'
                                         : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
                                     }`}
                                 >
@@ -190,31 +190,31 @@ const TipCalculator = () => {
                     </div>
                 </Card>
 
-                <Card className='border-none bg-linear-to-r from-[#4f85f6] to-[#22c2e8] text-neutral5'>
+                <Card className='border-none bg-linear-to-r from-[#4f85f6] to-[#22c2e8] text-white'>
                     <div className='flex flex-col gap-2 text-sm'>
                         <div className='flex items-center justify-between'>
-                            <span className='text-neutral5/90'>Bill Amount</span>
-                            <span className='font-medium text-neutral5'>{formatCurrency(summary.billAmount)}</span>
+                            <span className='text-white/80'>Bill Amount</span>
+                            <span className='font-medium text-white'>{formatCurrency(summary.billAmount)}</span>
                         </div>
 
                         <div className='flex items-center justify-between'>
-                            <span className='text-neutral5/90'>Tip Amount ({summary.tipPercent}%)</span>
-                            <span className='font-medium text-neutral5'>{formatCurrency(summary.tipAmount)}</span>
+                            <span className='text-white/80'>Tip Amount ({summary.tipPercent}%)</span>
+                            <span className='font-medium text-white'>{formatCurrency(summary.tipAmount)}</span>
                         </div>
 
-                        <hr className='border-neutral5/20 my-2'/>
+                        <hr className='border-white/20 my-2'/>
 
                         <div className='flex items-center justify-between'>
-                            <span className='font-medium text-neutral5'>Total</span>
-                            <span className={`${summary.splitBetween > 1 ? '' : 'text-2xl'} font-semibold text-neutral5`}>
+                            <span className='font-medium text-white'>Total</span>
+                            <span className={`${summary.splitBetween > 1 ? '' : 'text-2xl'} font-semibold text-white`}>
                                 {formatCurrency(summary.totalAmount)}
                             </span>
                         </div>
 
                         {summary.splitBetween > 1 ? (
                             <div className='flex items-center justify-between'>
-                                <span className='text-neutral5/90'>Per Person ({summary.splitBetween})</span>
-                                <span className='text-2xl font-medium text-neutral5'>{formatCurrency(summary.perPersonAmount)}</span>
+                                <span className='text-white/80'>Per Person ({summary.splitBetween})</span>
+                                <span className='text-2xl font-medium text-white'>{formatCurrency(summary.perPersonAmount)}</span>
                             </div>
                         ) : null}
                     </div>

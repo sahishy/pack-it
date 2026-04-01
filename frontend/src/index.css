@@ -1,9 +1,65 @@
 @import "tailwindcss";
 
+@theme {
+
+	--color-primary0: #318def;
+	--color-primary1: #13acdc;
+
+	--color-neutral0: #1F2937;
+	--color-neutral1: #9CA3AF;
+	--color-neutral2: #D1D5DB;
+	--color-neutral3: #E5E7EB;
+	--color-neutral4: #F3F4F6;
+	--color-neutral5: #ffffff;
+
+	--color-positive0: #166534;
+	--color-positive1: #16a34a;
+	--color-positive2: #dcfce7;
+
+	--color-negative0: #7f1d1d;
+	--color-negative1: #dc2626;
+	--color-negative2: #fecaca;
+
+	--color-warning0: #b45309;
+	--color-warning1: #d97706;
+	--color-warning2: #fef9c3;
+
+	--color-shadow: rgba(0, 0, 0, 0.02);
+
+}
+
 html {
 
+    background-color: var(--color-neutral5);
     @apply text-neutral0;
 
+}
+
+:root[data-theme='dark'] {
+
+	--color-primary0: #4ea0f7;
+	--color-primary1: #22c1ee;
+
+	--color-neutral0: #f3f4f6;
+	--color-neutral1: #9ca3af;
+	--color-neutral2: #4b5563;
+	--color-neutral3: #374151;
+	--color-neutral4: #1f2937;
+	--color-neutral5: #111827;
+
+	--color-positive0: #86efac;
+	--color-positive1: #22c55e;
+	--color-positive2: #14532d;
+
+	--color-negative0: #fca5a5;
+	--color-negative1: #ef4444;
+	--color-negative2: #7f1d1d;
+
+	--color-warning0: #fcd34d;
+	--color-warning1: #f59e0b;
+	--color-warning2: #78350f;
+
+	--color-shadow: rgba(0, 0, 0, 0);
 }
 
 .no-spinner::-webkit-outer-spin-button,
@@ -14,37 +70,4 @@ html {
 .no-spinner[type='number'] {
     -moz-appearance: textfield;
     appearance: textfield;
-}
-
-
-@media (prefers-color-scheme: light) {
-
-    @theme {
-
-		--color-primary0: #318def;
-		--color-primary1: #13acdc;
-
-        --color-neutral0: #1F2937;
-        --color-neutral1: #9CA3AF;
-        --color-neutral2: #D1D5DB;
-        --color-neutral3: #E5E7EB;
-        --color-neutral4: #F3F4F6;
-        --color-neutral5: white;
-
-        --color-positive0: #166534;
-        --color-positive1: #16a34a;
-        --color-positive2: #dcfce7;
-
-        --color-negative0: #7f1d1d;
-        --color-negative1: #dc2626;
-        --color-negative2: #fecaca;
-
-        --color-warning0: #b45309;
-        --color-warning1: #d97706;
-        --color-warning2: #fef9c3;
-
-		--color-shadow: rgba(0, 0, 0, 0.02);
-
-    }
-
 }

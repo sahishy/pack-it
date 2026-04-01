@@ -142,7 +142,7 @@ const Signup = () => {
 	}
 
 	return (
-		<main className='min-h-screen bg-neutral4'>
+		<main className='min-h-screen bg-neutral5'>
 
 			<Navbar />
 
@@ -151,7 +151,7 @@ const Signup = () => {
 
 					<div className='flex flex-col gap-3 items-center'>
 						<div className='justify-self-center p-4 bg-linear-to-t from-primary0 to-primary1 rounded-full'>
-							<PiHandWavingFill className='text-neutral5 text-3xl' />
+							<PiHandWavingFill className='text-white text-3xl' />
 						</div>
 						<div className='flex flex-col gap-1 text-center'>
 							<h1 className='text-2xl font-semibold text-neutral0'>Create your account</h1>

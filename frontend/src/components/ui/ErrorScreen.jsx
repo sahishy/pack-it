@@ -3,7 +3,7 @@ import Card from "./Card"
 
 const ErrorScreen = ({ text = 'Something went wrong.', className = '' }) => {
     return (
-        <div className={`min-h-screen flex items-center justify-center ${className}`}>
+        <div className={`min-h-screen bg-neutral5 flex items-center justify-center ${className}`}>
             <Card className="flex flex-col items-center text-center gap-3">
                 <FaRobot className="text-6xl text-neutral2"/>
                 <div className="flex flex-col gap-1">

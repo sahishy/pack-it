@@ -17,6 +17,14 @@ const MEASUREMENT_OPTIONS = [
     { value: 'imperial', label: 'Imperial', alias: 'lb, mi, ºF' },
 ]
 
+const resolveTheme = (preference) => {
+    if (preference === 'light' || preference === 'dark') {
+        return preference
+    }
+
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
 const Settings = () => {
 
     const { user, profile } = useAuth()
@@ -49,6 +57,9 @@ const Settings = () => {
 
     const handleThemeChange = async (nextTheme) => {
         setTheme(nextTheme)
+
+        document.documentElement.dataset.theme = resolveTheme(nextTheme)
+
         await savePreferences({
             ...preferences,
             theme: nextTheme,
@@ -64,16 +75,16 @@ const Settings = () => {
     }
 
     return (
-        <main className='min-h-screen'>
+        <main className='min-h-screen bg-neutral5'>
             <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
                 <div className='m-6 flex max-w-4xl flex-col gap-6 rounded-xl bg-linear-to-r from-primary0 to-primary1 px-6 py-10 lg:m-auto lg:bg-none'>
                     <div className='flex flex-col items-center gap-2 lg:items-start'>
-                        <h2 className='flex items-center gap-2 text-sm text-neutral3'>
+                        <h2 className='flex items-center gap-2 text-sm text-white/80'>
                             <FaGear className='text-lg' />
                             Make it yours.
                         </h2>
-                        <h1 className='text-4xl font-bold text-neutral4 lg:text-5xl'>Settings</h1>
-                        <p className='text-neutral4/90'>Customize your app preferences</p>
+                        <h1 className='text-4xl font-bold text-white lg:text-5xl'>Settings</h1>
+                        <p className='text-white/80'>Customize your app preferences</p>
                     </div>
                 </div>
             </section>
