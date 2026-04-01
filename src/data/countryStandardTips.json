@@ -1,0 +1,86 @@
+[
+    {
+        "country": "United States",
+        "tip_low": 15,
+        "tip_high": 25,
+        "other": null
+    },
+    {
+        "country": "Canada",
+        "tip_low": 15,
+        "tip_high": 20,
+        "other": null
+    },
+    {
+        "country": "United Kingdom",
+        "tip_low": 10,
+        "tip_high": 15,
+        "other": null
+    },
+    {
+        "country": "France",
+        "tip_low": null,
+        "tip_high": null,
+        "other": "Service included"
+    },
+    {
+        "country": "Germany",
+        "tip_low": 5,
+        "tip_high": 10,
+        "other": null
+    },
+    {
+        "country": "Italy",
+        "tip_low": null,
+        "tip_high": null,
+        "other": "Service included"
+    },
+    {
+        "country": "Spain",
+        "tip_low": 5,
+        "tip_high": 10,
+        "other": null
+    },
+    {
+        "country": "Japan",
+        "tip_low": null,
+        "tip_high": null,
+        "other": "Not customary"
+    },
+    {
+        "country": "Australia",
+        "tip_low": 10,
+        "tip_high": 15,
+        "other": null
+    },
+    {
+        "country": "Mexico",
+        "tip_low": 10,
+        "tip_high": 15,
+        "other": null
+    },
+    {
+        "country": "Brazil",
+        "tip_low": 10,
+        "tip_high": 10,
+        "other": null
+    },
+    {
+        "country": "India",
+        "tip_low": 10,
+        "tip_high": 10,
+        "other": null
+    },
+    {
+        "country": "China",
+        "tip_low": null,
+        "tip_high": null,
+        "other": "Not customary"
+    },
+    {
+        "country": "Thailand",
+        "tip_low": null,
+        "tip_high": null,
+        "other": "Optional"
+    }
+]

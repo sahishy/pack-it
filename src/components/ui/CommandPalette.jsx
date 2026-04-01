@@ -10,6 +10,7 @@ const CommandPalette = ({
     onSelect,
     getItemId = (item) => item.id,
     getItemLabel = (item) => item.name,
+    getItemDescription = () => null,
     getItemThumbnail = (item) => item.logo,
     title = 'Select an option',
     placeholder = 'Search...',
@@ -84,7 +85,9 @@ const CommandPalette = ({
                     ) : (
                         items.map((item) => {
                             const label = getItemLabel(item)
+                            const description = getItemDescription(item)
                             const thumbnail = getItemThumbnail(item)
+                            const isThumbnailImage = typeof thumbnail === 'string'
 
                             return (
                                 <li key={getItemId(item)}>
@@ -94,16 +97,26 @@ const CommandPalette = ({
                                         onClick={() => onSelect?.(item)}
                                     >
                                         {thumbnail ? (
-                                            <img
-                                                src={thumbnail}
-                                                alt={`${label} logo`}
-                                                className='h-7 w-7 shrink-0 rounded-md object-cover'
-                                            />
+                                            isThumbnailImage ? (
+                                                <img
+                                                    src={thumbnail}
+                                                    alt={`${label} logo`}
+                                                    className='h-7 w-7 shrink-0 rounded-md object-cover'
+                                                />
+                                            ) : (
+                                                thumbnail
+                                            )
                                         ) : (
                                             <div className='h-7 w-7 shrink-0 rounded-md bg-neutral4' aria-hidden='true' />
                                         )}
 
-                                        <span className='text-sm text-neutral0'>{label}</span>
+                                        <span className='flex flex-col'>
+                                            <span className='text-sm text-neutral0'>{label}</span>
+
+                                            {description ? (
+                                                <span className='text-xs text-neutral1'>{description}</span>
+                                            ) : null}
+                                        </span>
                                     </button>
                                 </li>
                             )

@@ -1,0 +1,64 @@
+{
+    "weight": {
+        "base_unit": "gram",
+        "units": {
+            "gram": {
+                "alias": "g",
+                "factor": 1
+            },
+            "kilogram": {
+                "alias": "kg",
+                "factor": 1000
+            },
+            "pound": {
+                "alias": "lb",
+                "factor": 453.592
+            },
+            "ounce": {
+                "alias": "oz",
+                "factor": 28.3495
+            }
+        }
+    },
+    "distance": {
+        "base_unit": "meter",
+        "units": {
+            "meter": {
+                "alias": "m",
+                "factor": 1
+            },
+            "kilometer": {
+                "alias": "km",
+                "factor": 1000
+            },
+            "mile": {
+                "alias": "mi",
+                "factor": 1609.34
+            },
+            "foot": {
+                "alias": "ft",
+                "factor": 0.3048
+            }
+        }
+    },
+    "temperature": {
+        "base_unit": "celsius",
+        "units": {
+            "celsius": {
+                "alias": "°C",
+                "scale": 1,
+                "offset": 0
+            },
+            "fahrenheit": {
+                "alias": "°F",
+                "scale": 0.555556,
+                "offset": -32
+            },
+            "kelvin": {
+                "alias": "K",
+                "scale": 1,
+                "offset": -273.15
+            }
+        }
+    }
+}

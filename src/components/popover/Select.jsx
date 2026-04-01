@@ -1,6 +1,30 @@
 import BasePopover from './BasePopover'
 import { TbSelector } from 'react-icons/tb'
 
+const getOptionValue = (option) => {
+    if (typeof option === 'string') {
+        return option
+    }
+
+    return option?.value
+}
+
+const getOptionLabel = (option) => {
+    if (typeof option === 'string') {
+        return option
+    }
+
+    return option?.label ?? option?.value ?? ''
+}
+
+const getOptionAlias = (option) => {
+    if (typeof option === 'string') {
+        return ''
+    }
+
+    return option?.alias ?? ''
+}
+
 const Select = ({
     label,
     id,
@@ -11,7 +35,9 @@ const Select = ({
     className = '',
     containerClassName = '',
 }) => {
-    const selectedLabel = value || placeholder
+    const selectedOption = options.find((option) => getOptionValue(option) === value)
+    const selectedLabel = selectedOption ? getOptionLabel(selectedOption) : placeholder
+    const selectedAlias = selectedOption ? getOptionAlias(selectedOption) : ''
 
     return (
         <div className={containerClassName}>
@@ -32,14 +58,22 @@ const Select = ({
                         aria-haspopup='listbox'
                         aria-expanded={open}
                     >
-                        <span className={value ? 'text-neutral0' : 'text-neutral1'}>{selectedLabel}</span>
+                        <span className={value ? 'text-neutral0' : 'text-neutral1'}>
+                            {selectedLabel}
+                            {value && selectedAlias ? <span className='text-neutral1'> ({selectedAlias})</span> : null}
+                        </span>
                         <TbSelector className='text-base text-neutral1' aria-hidden='true' />
                     </button>
                 )}
             >
                 {({ close }) => (
                     <ul role='listbox'>
-                        {options.map((optionValue) => (
+                        {options.map((option) => {
+                            const optionValue = getOptionValue(option)
+                            const optionLabel = getOptionLabel(option)
+                            const optionAlias = getOptionAlias(option)
+
+                            return (
                             <li key={optionValue}>
                                 <button
                                     type='button'
@@ -51,10 +85,14 @@ const Select = ({
                                         close()
                                     }}
                                 >
-                                    {optionValue}
+                                    <span>
+                                        {optionLabel}
+                                        {optionAlias ? <span className='text-neutral1'> ({optionAlias})</span> : null}
+                                    </span>
                                 </button>
                             </li>
-                        ))}
+                            )
+                        })}
                     </ul>
                 )}
             </BasePopover>

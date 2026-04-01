@@ -16,6 +16,7 @@ import { getTripById, getTripDurationDays } from '../utils/tripUtils'
 import { getCategoryEmoji, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
 import { TbConfettiFilled } from 'react-icons/tb'
 import { HiOutlineLocationMarker } from 'react-icons/hi'
+import { setTripPackedStatus } from '../services/tripService'
 
 const StrategyOverview = () => {
 
@@ -98,6 +99,7 @@ const StrategyOverview = () => {
 
     const handleNext = () => {
         if(isFinalStep) {
+            void setTripPackedStatus(tripId, true)
             setIsCompleted(true)
             return
         }
@@ -107,7 +109,7 @@ const StrategyOverview = () => {
 
     if (isCompleted) {
         return (
-            <main className='min-h-screen bg-neutral4'>
+            <main className='min-h-screen'>
                 <Topbar displayName={displayName} email={user.email} onLogout={logout} />
 
                 <div className='mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 py-10'>
@@ -232,7 +234,7 @@ const StrategyOverview = () => {
 
 const SummaryMetric = ({ icon, value, label }) => {
     return (
-        <div className='flex flex-col gap-3 items-center'>
+        <div className='flex flex-col gap-3 items-center rounded-xl border border-neutral3 p-4 shadow-md shadow-shadow lg:shadow-none lg:p-0 lg:border-none'>
             <div>{icon}</div>
             <div className='flex flex-col items-center'>
                 <p className='text-xl font-semibold text-neutral0'>{value}</p>

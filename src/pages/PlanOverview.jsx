@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { BsStars } from 'react-icons/bs'
+import { BsStar, BsStars } from 'react-icons/bs'
 import { FiCheckCircle, FiXCircle } from 'react-icons/fi'
 import Topbar from '../components/ui/Topbar'
 import Return from '../components/ui/Return'
@@ -80,6 +80,10 @@ const PlanOverview = () => {
         return <ErrorScreen text='Trip not found.'/>
     }
 
+    if (items.length === 0) {
+        return <Navigate to={`/trips/${tripId}`} replace />
+    }
+
     const canGenerateStrategy = isSuccess && !hasGeneratedStrategy
 
     const handleGenerateStrategy = async () => {
@@ -149,7 +153,7 @@ const PlanOverview = () => {
                 </Card>
 
                 <Card className='flex flex-col gap-3'>
-                    <h2 className='text-xl font-semibold text-neutral0'>AI Recommendations</h2>
+                    <h2 className='flex gap-3 items-center text-xl font-semibold text-neutral0'><BsStars/> AI Recommendations</h2>
                     <p className='text-sm text-neutral1'>
                         {planResult?.summary ?? 'Analyzing your packing list...'}
                     </p>

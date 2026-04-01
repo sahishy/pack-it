@@ -1,9 +1,12 @@
 import {
     addDoc,
     collection,
+    deleteDoc,
+    doc,
     getFirestore,
     onSnapshot,
     query,
+    updateDoc,
     where,
 } from 'firebase/firestore'
 import { FALLBACK_TRIP_THUMBNAIL } from '../utils/tripUtils'
@@ -61,6 +64,7 @@ const createTrip = async (uid, tripData) => {
         flightClass: tripData.flightClass,
         baggageLimit: Number(tripData.baggageLimit),
         planId: null,
+        packed: false,
         createdAt: new Date(),
     }
 
@@ -90,8 +94,60 @@ const subscribeToUserTrips = (uid, onNext, onError) => {
 
 }
 
+const setTripPackedStatus = async (tripId, packed) => {
+    if (!tripId) {
+        return
+    }
+
+    const db = getFirestore()
+    const tripRef = doc(db, 'trips', tripId)
+
+    await updateDoc(tripRef, {
+        packed: Boolean(packed),
+    })
+}
+
+const updateTrip = async (tripId, tripData) => {
+    if (!tripId) {
+        throw new Error('Trip not found.')
+    }
+
+    const db = getFirestore()
+    const tripRef = doc(db, 'trips', tripId)
+
+    const payload = {
+        destination: tripData.destination,
+        startDate: tripData.startDate,
+        endDate: tripData.endDate,
+        tripPurpose: tripData.tripPurpose,
+        airline: tripData.airline,
+        flightClass: tripData.flightClass,
+        baggageLimit: Number(tripData.baggageLimit),
+        updatedAt: new Date(),
+    }
+
+    if (tripData.destination) {
+        payload.thumbnailUrl = await getThumbnailUrl(tripData.destination)
+    }
+
+    await updateDoc(tripRef, payload)
+}
+
+const deleteTrip = async (tripId) => {
+    if (!tripId) {
+        return
+    }
+
+    const db = getFirestore()
+    const tripRef = doc(db, 'trips', tripId)
+    await deleteDoc(tripRef)
+}
+
 export {
     getThumbnailUrl,
     createTrip,
     subscribeToUserTrips,
+    setTripPackedStatus,
+    updateTrip,
+    deleteTrip,
 }

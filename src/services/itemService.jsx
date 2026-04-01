@@ -3,6 +3,7 @@ import {
     collection,
     deleteDoc,
     doc,
+    getDocs,
     getFirestore,
     onSnapshot,
     query,
@@ -66,9 +67,23 @@ const removeItem = async (itemId) => {
     await deleteDoc(itemRef)
 }
 
+const removeTripItems = async (uid, tripId) => {
+    if (!uid || !tripId) {
+        return
+    }
+
+    const db = getFirestore()
+    const itemsRef = collection(db, 'items')
+    const itemsQuery = query(itemsRef, where('userId', '==', uid), where('tripId', '==', tripId))
+    const snapshot = await getDocs(itemsQuery)
+
+    await Promise.all(snapshot.docs.map((itemDoc) => deleteDoc(doc(db, 'items', itemDoc.id))))
+}
+
 export {
     createItem,
     subscribeToTripItems,
     updateItemChecked,
     removeItem,
+    removeTripItems,
 }

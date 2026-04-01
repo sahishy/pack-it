@@ -22,10 +22,13 @@ const Trip = ({ trip }) => {
     const hasAirline = Boolean(airline?.name)
     const shouldShowTotalWeight = items.length > 0 && totalWeight > 0
     const hasPlan = Boolean(trip?.planId)
+    const isPacked = Boolean(trip?.packed)
+    const statusLabel = isPacked ? 'Packed' : hasPlan ? 'Ready to pack' : 'Planning'
+    const statusChipClass = isPacked || hasPlan ? 'bg-positive2 text-positive0' : 'bg-warning2 text-warning0'
 
     return (
         <Link to={`/trips/${trip.id}`}>
-            <Card className='overflow-hidden p-0! transition hover:-translate-y-1 hover:shadow-xl'>
+            <Card className='flex h-full flex-col overflow-hidden p-0! transition hover:-translate-y-1 hover:shadow-xl'>
                 <div className='relative h-52 w-full'>
                     <img
                         src={thumbnail}
@@ -44,8 +47,7 @@ const Trip = ({ trip }) => {
                     </div>
                 </div>
 
-                <div className='p-4 flex flex-col gap-2 text-sm'>
-
+                <div className='flex flex-1 flex-col gap-2 p-4 text-sm'>
                     <div className='flex justify-between items-center'>
                         {hasAirline ? (
                             <p className='flex items-center gap-2 text-neutral0'>
@@ -60,7 +62,7 @@ const Trip = ({ trip }) => {
                                 {airline.name}
                             </p>
                         ) : <span />}
-                        <p className='px-3 py-1 bg-neutral4 text-xs rounded-full'>
+                        <p className='px-3 py-1 bg-neutral4 text-neutral0 text-xs rounded-full'>
                             {tripDurationDays} {tripDurationDays === 1 ? 'day' : 'days'}
                         </p>
                     </div>
@@ -73,15 +75,15 @@ const Trip = ({ trip }) => {
                         </div>
                     ) : null}
 
-                    <hr className='my-2 border-neutral3' />
-
-                    <div className='flex justify-between items-center'>
-                        <p className={`px-3 py-1 text-xs rounded-full ${hasPlan ? 'bg-positive2 text-positive0' : 'bg-warning2 text-warning0'}`}>
-                            {hasPlan ? 'Ready to pack' : 'Planning'}
-                        </p>
-                        <FaChevronRight className='text-neutral1'/>
+                    <div className='mt-auto flex flex-col gap-2'>
+                        <hr className='my-2 border-neutral3' />
+                        <div className='flex justify-between items-center'>
+                            <p className={`px-3 py-1 text-xs rounded-full ${statusChipClass}`}>
+                                {statusLabel}
+                            </p>
+                            <FaChevronRight className='text-neutral1' />
+                        </div>
                     </div>
-
                 </div>
             </Card>
         </Link>

@@ -1,0 +1,30 @@
+[
+    {
+        "item": "Travel-size shampoo",
+        "volume_ml": 100
+    },
+    {
+        "item": "Perfume sample",
+        "volume_ml": 30
+    },
+    {
+        "item": "Contact lens solution",
+        "volume_ml": 100
+    },
+    {
+        "item": "Hand sanitizer",
+        "volume_ml": 60
+    },
+    {
+        "item": "Regular shampoo bottle",
+        "volume_ml": 250
+    },
+    {
+        "item": "Full-size perfume",
+        "volume_ml": 150
+    },
+    {
+        "item": "Water bottle",
+        "volume_ml": 500
+    }
+]

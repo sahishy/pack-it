@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import DateSelector from '../components/ui/DateSelector'
@@ -8,20 +8,32 @@ import Select from '../components/popover/Select'
 import Counter from '../components/popover/Counter'
 import CommandPalette from '../components/ui/CommandPalette'
 import Topbar from '../components/ui/Topbar'
+import Return from '../components/ui/Return'
 import { useAuth } from '../contexts/AuthContext'
 import { useTrips } from '../contexts/TripsContext'
 import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
-import { BsStars } from "react-icons/bs";
-import Return from '../components/ui/Return'
-import { FLIGHT_CLASS_OPTIONS, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
+import { FLIGHT_CLASS_OPTIONS, getTripById, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
+import LoadingScreen from '../components/ui/LoadingScreen'
+import ErrorScreen from '../components/ui/ErrorScreen'
 
-const NewTrip = () => {
-
+const EditTrip = () => {
     const navigate = useNavigate()
+    const { tripId } = useParams()
     const { user, profile, logout } = useAuth()
-    const { addTrip, creating, createError } = useTrips()
+    const {
+        trips,
+        loading: tripsLoading,
+        error: tripsError,
+        editTrip,
+        updating,
+        updateError,
+    } = useTrips()
 
-    const [formData, setFormData] = useState({
+    const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
+    const [error, setError] = useState('')
+    const [isAirlinePaletteOpen, setIsAirlinePaletteOpen] = useState(false)
+    const [airlineQuery, setAirlineQuery] = useState('')
+    const [formData, setFormData] = useState(() => ({
         destination: '',
         startDate: '',
         endDate: '',
@@ -29,12 +41,26 @@ const NewTrip = () => {
         airline: '',
         flightClass: '',
         baggageLimit: '',
-    })
-    const [error, setError] = useState('')
-    const [isAirlinePaletteOpen, setIsAirlinePaletteOpen] = useState(false)
-    const [airlineQuery, setAirlineQuery] = useState('')
+    }))
 
     const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
+
+    useEffect(() => {
+        if (!trip) {
+            return
+        }
+
+        setFormData({
+            destination: trip.destination ?? '',
+            startDate: trip.startDate ?? '',
+            endDate: trip.endDate ?? '',
+            tripPurpose: trip.tripPurpose ?? '',
+            airline: trip.airline ?? '',
+            flightClass: trip.flightClass ?? '',
+            baggageLimit: trip.baggageLimit ?? '',
+        })
+    }, [trip])
+
     const selectedAirline = useMemo(() => getAirlineDisplayById(formData.airline), [formData.airline])
     const filteredAirlines = useMemo(() => searchAirlines(airlineQuery).slice(0, 200), [airlineQuery])
 
@@ -69,7 +95,6 @@ const NewTrip = () => {
     }
 
     const handleSubmit = async (event) => {
-
         event.preventDefault()
         setError('')
 
@@ -90,12 +115,23 @@ const NewTrip = () => {
         }
 
         try {
-            await addTrip(formData)
-            navigate('/home')
+            await editTrip(tripId, formData)
+            navigate(`/trips/${tripId}`)
         } catch {
-            setError('Unable to create trip right now. Please try again.')
+            setError('Unable to update trip right now. Please try again.')
         }
+    }
 
+    if (!user) {
+        return <Navigate to='/login' replace />
+    }
+
+    if (tripsLoading) {
+        return <LoadingScreen text='Loading trip...' className='bg-neutral4' />
+    }
+
+    if (tripsError || !trip) {
+        return <ErrorScreen text='Trip not found.' className='bg-neutral4' />
     }
 
     const requiredAsterisk = <span className='text-negative1'>*</span>
@@ -104,18 +140,13 @@ const NewTrip = () => {
         <main className='min-h-screen'>
             <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
 
-            <div className='flex flex-col gap-6 mx-auto w-full max-w-3xl px-4 py-10'>
-                <Return />
-                <Card>
+            <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10'>
+                <Return text='Back to trip overview' link={`/trips/${tripId}`} />
 
-                    <div className='flex flex-col gap-3 items-center'>
-                        <div className='justify-self-center p-4 bg-linear-to-t from-primary0 to-primary1 rounded-full'>
-                            <BsStars className='text-neutral5 text-3xl' />
-                        </div>
-                        <div>
-                            <h1 className='text-3xl font-semibold text-neutral0 text-center'>Create a new trip</h1>
-                            <p className='mt-1 text-sm text-neutral1 text-center'>Add your trip details to start planning what to pack.</p>
-                        </div>
+                <Card>
+                    <div>
+                        <h1 className='text-center text-3xl font-semibold text-neutral0'>Edit trip</h1>
+                        <p className='mt-1 text-center text-sm text-neutral1'>Update your trip details.</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className='mt-6 grid gap-4'>
@@ -127,7 +158,7 @@ const NewTrip = () => {
                             onChange={handleChange}
                         />
 
-                        <div className='flex gap-4 flex-col lg:flex-row'>
+                        <div className='flex flex-col gap-4 lg:flex-row'>
                             <DateSelector
                                 label={<><span>Start Date </span>{requiredAsterisk}</>}
                                 id='startDate'
@@ -146,7 +177,7 @@ const NewTrip = () => {
                             />
                         </div>
 
-                        <div className='flex gap-4 flex-col lg:flex-row'>
+                        <div className='flex flex-col gap-4 lg:flex-row'>
                             <Select
                                 label={<><span>Trip Purpose </span>{requiredAsterisk}</>}
                                 id='tripPurpose'
@@ -166,7 +197,7 @@ const NewTrip = () => {
                             />
                         </div>
 
-                        <div className='flex gap-4 flex-col lg:flex-row'>
+                        <div className='flex flex-col gap-4 lg:flex-row'>
                             <div className='flex-1'>
                                 <label htmlFor='airline' className='text-sm font-medium text-neutral0'>
                                     Airline
@@ -179,7 +210,7 @@ const NewTrip = () => {
                                         setAirlineQuery(selectedAirline?.name ?? '')
                                         setIsAirlinePaletteOpen(true)
                                     }}
-                                    className='mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 min-h-10.5 text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
+                                    className='mt-1 flex min-h-10.5 w-full cursor-pointer items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
                                 >
                                     {selectedAirline?.logo ? (
                                         <img
@@ -207,13 +238,11 @@ const NewTrip = () => {
                         </div>
 
                         {error ? <p className='text-sm text-negative1'>{error}</p> : null}
-                        {createError ? <p className='text-sm text-negative1'>{createError.message}</p> : null}
+                        {updateError ? <p className='text-sm text-negative1'>{updateError.message}</p> : null}
 
-                        <Button type='submit' loading={creating} disabled={hasMissingRequiredField} className='flex gap-2 mt-3'>
-                            <BsStars />
-                            Create Trip
+                        <Button type='submit' loading={updating} disabled={hasMissingRequiredField} className='mt-3'>
+                            Save Changes
                         </Button>
-
                     </form>
 
                     <CommandPalette
@@ -235,7 +264,6 @@ const NewTrip = () => {
             </div>
         </main>
     )
-
 }
 
-export default NewTrip
+export default EditTrip

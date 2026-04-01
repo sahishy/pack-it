@@ -1,5 +1,21 @@
 const FALLBACK_TRIP_THUMBNAIL = 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1600&q=80'
 
+const TRIP_PURPOSE_OPTIONS = [
+    'Business',
+    'Leisure',
+    'Adventure',
+    'Beach',
+    'City Break',
+    'Family',
+]
+
+const FLIGHT_CLASS_OPTIONS = [
+    'Economy',
+    'Premium Economy',
+    'Business',
+    'First Class',
+]
+
 const getTotalTripsCount = (trips) => {
     return trips.length;
 }
@@ -37,6 +53,8 @@ const getTripDurationDays = (trip) => {
 
 export {
     FALLBACK_TRIP_THUMBNAIL,
+    TRIP_PURPOSE_OPTIONS,
+    FLIGHT_CLASS_OPTIONS,
     getTotalTripsCount,
     getUpcomingTripsCount,
     getTripById,

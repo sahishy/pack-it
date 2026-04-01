@@ -10,7 +10,7 @@ const UserProfile = ({ displayName, email, onLogout }) => {
 
     return (
         <div className='flex gap-2 items-center'>
-            <span className='text-sm font-medium text-neutral0'>Welcome, {profile?.firstName || 'User'}</span>
+            <span className='hidden text-sm font-medium text-neutral0 lg:flex'>{profile?.firstName || 'User'} {profile?.lastName || ''}</span>
             <Dropdown
                 trigger={({ open, toggle }) => (
                     <button

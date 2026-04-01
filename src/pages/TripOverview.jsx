@@ -10,7 +10,7 @@ import { useTrips } from '../contexts/TripsContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import Return from '../components/ui/Return'
 import { FiPackage } from 'react-icons/fi'
-import { removeItem, updateItemChecked } from '../services/itemService'
+import { removeItem, removeTripItems, updateItemChecked } from '../services/itemService'
 import { deleteTripPlan } from '../services/planService'
 import { getTripById, getTripThumbnail } from '../utils/tripUtils'
 import LoadingScreen from '../components/ui/LoadingScreen'
@@ -21,12 +21,14 @@ import { FaRegCalendar } from 'react-icons/fa6'
 import { formatDisplayDate } from '../utils/formatters'
 import { getTotalWeight } from '../utils/itemUtils'
 import { useTripPlan } from '../contexts/PlansContext'
+import Dropdown from '../components/popover/Dropdown'
+import { TbDots } from 'react-icons/tb'
 
 const TripOverview = () => {
     const navigate = useNavigate()
     const { tripId } = useParams()
     const { user, profile, logout } = useAuth()
-    const { trips, loading: tripsLoading, error: tripsError } = useTrips()
+    const { trips, loading: tripsLoading, error: tripsError, removeTrip, deleting, deleteError } = useTrips()
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
     const { plan, loading: planLoading } = useTripPlan(tripId)
 
@@ -105,6 +107,20 @@ const TripOverview = () => {
         }
     }
 
+    const handleDeleteTrip = async (closeMenu) => {
+        try {
+            setActionError(null)
+            closeMenu?.()
+
+            await removeTripItems(user.uid, tripId)
+            await deleteTripPlan(user.uid, tripId)
+            await removeTrip(tripId)
+            navigate('/home', { replace: true })
+        } catch (errorValue) {
+            setActionError(errorValue)
+        }
+    }
+
     return (
         <main className='min-h-screen'>
             <Topbar displayName={displayName} email={user.email} onLogout={logout} />
@@ -112,7 +128,7 @@ const TripOverview = () => {
             <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
                 <Return text={'Back to home'}/>
                 <>
-                    <Card className='overflow-hidden p-0!'>
+                    <Card className='group overflow-hidden p-0!'>
                         <div className='relative h-48 w-full'>
                             <img
                                 src={getTripThumbnail(trip)}
@@ -128,6 +144,51 @@ const TripOverview = () => {
                                     <FaRegCalendar className='text-xs' />
                                     {formattedStartDate} → {formattedEndDate}
                                 </p>
+                            </div>
+
+                            <div className='absolute right-4 top-4'>
+                                <Dropdown
+                                    trigger={({ open, toggle }) => (
+                                        <button
+                                            type='button'
+                                            onClick={toggle}
+                                            className={`rounded-lg p-2 text-white transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 bg-neutral0/4 backdrop-blur ${open ? 'opacity-100 bg-neutral0/8' : 'opacity-100 hover:bg-neutral0/8'}`}
+                                            aria-haspopup='menu'
+                                            aria-expanded={open}
+                                            aria-label='Trip actions'
+                                        >
+                                            <TbDots className='text-xl' />
+                                        </button>
+                                    )}
+                                >
+                                    {({ close }) => (
+                                        <div className='space-y-2'>
+                                            <button
+                                                type='button'
+                                                onClick={() => {
+                                                    close()
+                                                    navigate(`/trips/${tripId}/edit`)
+                                                }}
+                                                className='w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-neutral0 transition hover:bg-neutral4'
+                                                role='menuitem'
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <hr className='border-neutral3' />
+
+                                            <button
+                                                type='button'
+                                                onClick={() => handleDeleteTrip(close)}
+                                                disabled={deleting}
+                                                className='w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-negative1 transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
+                                                role='menuitem'
+                                            >
+                                                {deleting ? 'Deleting...' : 'Delete'}
+                                            </button>
+                                        </div>
+                                    )}
+                                </Dropdown>
                             </div>
                         </div>
 
@@ -170,6 +231,7 @@ const TripOverview = () => {
                         ) : null}
 
                         {actionError ? <p className='text-sm text-negative1'>{actionError.message}</p> : null}
+                        {deleteError ? <p className='text-sm text-negative1'>{deleteError.message}</p> : null}
 
                         {itemsLoading ? (
                             <LoadingScreen text='Loading items...' className='bg-neutral4' />
@@ -196,14 +258,16 @@ const TripOverview = () => {
                         )}
                     </section>
 
-                    <Button
-                        className='flex gap-2'
-                        loading={planLoading}
-                        onClick={() => navigate(`/trips/${tripId}/plan`)}
-                    >
-                        {hasExistingPlan ? <FiSearch /> : <BsStars />}
-                        {hasExistingPlan ? 'View AI Packing Suggestions' : 'Get AI Packing Suggestions'}
-                    </Button>
+                    {items.length > 0 ? (
+                        <Button
+                            className='flex gap-2'
+                            loading={planLoading}
+                            onClick={() => navigate(`/trips/${tripId}/plan`)}
+                        >
+                            {hasExistingPlan ? <FiSearch /> : <BsStars />}
+                            {hasExistingPlan ? 'View AI Packing Suggestions' : 'Get AI Packing Suggestions'}
+                        </Button>
+                    ) : null}
                 </>
 
                 

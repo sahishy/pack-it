@@ -22,6 +22,18 @@ const AddItemForm = ({ tripId, setShowAddForm }) => {
     const [createError, setCreateError] = useState(null)
     const [formError, setFormError] = useState('')
 
+    const requiredFieldsForDisable = ['name', 'category']
+
+    const hasMissingRequiredField = requiredFieldsForDisable.some((fieldName) => {
+        const fieldValue = formData[fieldName]
+
+        if (typeof fieldValue === 'string') {
+            return !fieldValue.trim()
+        }
+
+        return !fieldValue
+    })
+
     const handleSubmit = async (event) => {
         event.preventDefault()
         setFormError('')
@@ -102,7 +114,9 @@ const AddItemForm = ({ tripId, setShowAddForm }) => {
                 {createError ? <p className='text-sm text-negative1'>{createError.message}</p> : null}
 
                 <div className='flex gap-3 mt-3'>
-                    <Button type='submit' loading={creating} className='w-full'>Add Item</Button>
+                    <Button type='submit' loading={creating} disabled={creating || hasMissingRequiredField} className='w-full'>
+                        Add Item
+                    </Button>
                     <Button variant='secondary' disabled={creating} onClick={() => setShowAddForm(false)}>
                         Cancel
                     </Button>
