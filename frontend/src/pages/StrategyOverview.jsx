@@ -13,7 +13,7 @@ import { useTrips } from '../contexts/TripsContext'
 import { useTripPlan } from '../contexts/PlansContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import { getTripById, getTripDurationDays } from '../utils/tripUtils'
-import { getCategoryEmoji, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
+import { getCategoryEmoji, getResolvedItemWeightKg, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
 import { TbConfettiFilled } from 'react-icons/tb'
 import { HiOutlineLocationMarker } from 'react-icons/hi'
 import { setTripPackedStatus } from '../services/tripService'
@@ -172,7 +172,7 @@ const StrategyOverview = () => {
                                                 <FaCircleCheck className='text-positive1' />
                                                 {item.name}
                                             </p>
-                                            <p className='text-sm font-medium text-neutral1'>{formatWeight(item.weight ?? 0, { decimals: 2 })}</p>
+                                            <p className='text-sm font-medium text-neutral1'>{formatWeight(getResolvedItemWeightKg(item.weight), { decimals: 2 })}</p>
                                         </div>
                                     ))}
                                 </div>

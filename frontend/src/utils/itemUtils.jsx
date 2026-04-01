@@ -18,6 +18,7 @@ const getCategoryConfig = (category) => {
     return ITEM_CATEGORY_CONFIG.find((itemCategory) => normalizeCategory(itemCategory.name) === normalizedCategory)
 }
 
+// old category-based weighing, replaced by AI
 const estimateItemWeight = ({ category, quantity }) => {
     const categoryConfig = getCategoryConfig(category)
     const baseWeight = categoryConfig?.weight ?? 0
@@ -30,8 +31,32 @@ const getCategoryEmoji = (category) => {
     return getCategoryConfig(category)?.emoji ?? '📦'
 }
 
+const getResolvedItemWeightKg = (itemWeight) => {
+    if(typeof itemWeight === 'number') {
+        return itemWeight
+    }
+
+    if(itemWeight?.success === true) {
+        return Number(itemWeight.weightKg) || 0
+    }
+
+    return 0
+}
+
 const getTotalWeight = (items) => {
-    return items.reduce((total, item) => total + (item.weight || 0), 0)
+    return items.reduce((total, item) => {
+        const itemWeight = item?.weight
+
+        if (typeof itemWeight === 'number') {
+            return total + itemWeight
+        }
+
+        if (itemWeight?.success === true) {
+            return total + (Number(itemWeight.weightKg) || 0)
+        }
+
+        return total
+    }, 0)
 }
 
 export {
@@ -40,4 +65,5 @@ export {
     estimateItemWeight,
     getCategoryEmoji,
     getTotalWeight,
+    getResolvedItemWeightKg
 }

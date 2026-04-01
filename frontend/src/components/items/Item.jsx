@@ -3,13 +3,26 @@ import { FiTrash2 } from 'react-icons/fi'
 import { getCategoryEmoji } from '../../utils/itemUtils'
 import Checkbox from '../ui/Checkbox'
 import useWeightFormatter from '../../hooks/useWeightFormatter'
+import { FaXmark } from 'react-icons/fa6'
 
 const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting = false }) => {
     const isBusy = isUpdating || isDeleting
     const { formatWeight } = useWeightFormatter()
+    const rawWeight = item?.weight
+    const hasLegacyWeight = typeof rawWeight === 'number'
+    const hasWeightResponse = hasLegacyWeight || (typeof rawWeight === 'object' && rawWeight !== null && typeof rawWeight.success === 'boolean')
+    const isWeightPending = !hasWeightResponse
+    const isWeightFailed = !hasLegacyWeight && rawWeight?.success === false
+    const hasItemError = isWeightFailed
+    const weightFailureReason = rawWeight?.reason || 'Item not recognized'
+    const resolvedWeightKg = hasLegacyWeight
+        ? rawWeight
+        : rawWeight?.success === true
+            ? Number(rawWeight.weightKg) || 0
+            : 0
 
     return (
-        <Card className='py-3! px-4!'>
+        <Card className={`py-3! px-4!`}>
             <div className='flex items-center justify-between'>
                 <div className='flex min-w-0 items-center gap-3'>
 
@@ -28,11 +41,17 @@ const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting 
                             <h3 className={`text-sm font-semibold ${item.checked ? 'text-neutral1 line-through' : 'text-neutral0'}`}>
                                 {item.name}
                             </h3>
-                            <div className='flex flex-wrap items-center gap-2 text-xs text-neutral1'>
-                                <p className='capitalize'>{item.category}</p>
-                                {item.quantity > 1 ? <p className='font-medium'>x{item.quantity}</p> : null}
-                                <p className='text-primary0 font-medium'>{formatWeight(item.weight ?? 0, { decimals: 2 })}</p>
-                            </div>
+                            {isWeightPending ? (
+                                <div className='mt-1 h-3 w-36 animate-pulse rounded bg-neutral3' />
+                            ) : isWeightFailed ? (
+                                <p className='text-xs flex items-center gap-1 font-medium text-negative1'><FaXmark/> {weightFailureReason}</p>
+                            ) : (
+                                <div className='flex flex-wrap items-center gap-2 text-xs text-neutral1'>
+                                    <p className='capitalize'>{item.category}</p>
+                                    {item.quantity > 1 ? <p className='font-medium'>x{item.quantity}</p> : null}
+                                    <p className='text-primary0 font-medium'>{formatWeight(resolvedWeightKg, { decimals: 2 })}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -42,7 +61,7 @@ const Item = ({ item, onToggleChecked, onDelete, isUpdating = false, isDeleting 
                     type='button'
                     onClick={() => onDelete(item.id)}
                     disabled={isBusy}
-                    className='rounded-lg p-2 text-neutral1 transition cursor-pointer hover:bg-neutral4 hover:text-negative1 disabled:cursor-not-allowed disabled:opacity-60'
+                    className={`rounded-lg p-2 transition cursor-pointer ${hasItemError ? 'animate-pulse bg-negative2 text-negative1 hover:animate-none' : 'text-neutral1 hover:bg-neutral4 hover:text-negative1'} disabled:cursor-not-allowed disabled:opacity-60`}
                     aria-label={`Delete ${item.name}`}
                 >
                     <FiTrash2 className='text-xl' />

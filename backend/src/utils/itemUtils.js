@@ -27,7 +27,23 @@ const estimateItemWeight = ({ category, quantity }) => {
 }
 
 const getTotalWeight = (items) => {
-    return items.reduce((total, item) => total + (item.weight || 0), 0)
+
+    return items.reduce((total, item) => {
+        
+        const itemWeight = item?.weight
+
+        if(typeof itemWeight === 'number') {
+            return total + itemWeight
+        }
+
+        if(itemWeight?.success === true) {
+            return total + (Number(itemWeight.weightKg) || 0)
+        }
+
+        return total
+
+    }, 0)
+
 }
 
 export {

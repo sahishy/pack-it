@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { db } from '../lib/firebaseAdmin.js'
 import { serializeDoc } from '../utils/firestoreUtils.js'
-import { estimateItemWeight } from '../utils/itemUtils.js'
+import { getPredictedItemWeight } from '../utils/aiUtils.js'
 
 const itemsRouter = Router()
 
@@ -65,7 +65,7 @@ itemsRouter.post('/trips/:tripId/items', async (req, res) => {
         name: itemData.name,
         category: itemData.category,
         quantity: Number(itemData.quantity),
-        weight: estimateItemWeight(itemData),
+        weight: null,
         checked: false,
         createdAt: new Date(),
     }
@@ -74,6 +74,42 @@ itemsRouter.post('/trips/:tripId/items', async (req, res) => {
     const snapshot = await docRef.get()
 
     return res.status(201).json({ item: serializeDoc(snapshot) })
+
+})
+
+itemsRouter.patch('/items/:itemId/weight', async (req, res) => {
+
+    const uid = req.user.uid
+    const { itemId } = req.params
+    const itemRef = getItemRef(itemId)
+    const snapshot = await itemRef.get()
+
+    if(!snapshot.exists) {
+        return res.status(404).json({ message: 'Item not found.' })
+    }
+
+    const item = snapshot.data() ?? {}
+
+    if(item.userId !== uid) {
+        return res.status(403).json({ message: 'Forbidden.' })
+    }
+
+    const weightPrediction = await getPredictedItemWeight({
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+    })
+
+    await itemRef.update({
+        weight: weightPrediction,
+        updatedAt: new Date(),
+    })
+
+    const updated = await itemRef.get()
+    return res.json({
+        weight: weightPrediction,
+        item: serializeDoc(updated),
+    })
 
 })
 

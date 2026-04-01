@@ -26,6 +26,25 @@ import Dropdown from '../components/popover/Dropdown'
 import { TbDots } from 'react-icons/tb'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 
+const getCreatedAtMs = (item) => {
+    const createdAt = item?.createdAt
+
+    if (!createdAt) {
+        return 0
+    }
+
+    if (typeof createdAt?.toMillis === 'function') {
+        return createdAt.toMillis()
+    }
+
+    if (createdAt instanceof Date) {
+        return createdAt.getTime()
+    }
+
+    const parsed = new Date(createdAt).getTime()
+    return Number.isNaN(parsed) ? 0 : parsed
+}
+
 const TripOverview = () => {
     const navigate = useNavigate()
     const { tripId } = useParams()
@@ -49,6 +68,10 @@ const TripOverview = () => {
     const flightClassLabel = trip?.flightClass || '—'
     const hasExistingPlan = Boolean(plan)
     const isItemsSectionBusy = itemsLoading || deleting
+    const hasFailedWeight = items.some((item) => item?.weight?.success === false)
+    const orderedItems = useMemo(() => {
+        return [...items].sort((a, b) => getCreatedAtMs(a) - getCreatedAtMs(b))
+    }, [items])
 
     if(!user) {
         return <Navigate to='/login' replace />
@@ -257,7 +280,7 @@ const TripOverview = () => {
                             </div>
                         ) : (
                             <div className='flex flex-col gap-3'>
-                                {items.map((item) => (
+                                {orderedItems.map((item) => (
                                     <Item
                                         key={item.id}
                                         item={item}
@@ -275,6 +298,7 @@ const TripOverview = () => {
                         <Button
                             className='flex gap-2'
                             loading={planLoading}
+                            disabled={hasFailedWeight}
                             onClick={() => navigate(`/trips/${tripId}/plan`)}
                         >
                             {hasExistingPlan ? <FiSearch /> : <BsStars />}

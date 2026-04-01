@@ -4,11 +4,24 @@ import { apiDelete, apiPatch, apiPost } from './apiClient'
 
 const createItem = async (_uid, tripId, itemData) => {
     const data = await apiPost(`/api/trips/${tripId}/items`, { itemData })
-    return data?.item?.id
+    const itemId = data?.item?.id
+
+    if (!itemId) {
+        return itemId
+    }
+
+    try {
+        await apiPatch(`/api/items/${itemId}/weight`)
+    } catch (error) {
+        console.error('Failed to predict item weight', error)
+    }
+
+    return itemId
 }
 
 const subscribeToTripItems = (uid, tripId, onNext, onError) => {
-    if (!uid || !tripId) {
+
+    if(!uid || !tripId) {
         onNext([])
         return () => {}
     }
@@ -33,6 +46,7 @@ const subscribeToTripItems = (uid, tripId, onNext, onError) => {
             onError?.(error)
         },
     )
+    
 }
 
 const updateItemChecked = async (itemId, checked) => {

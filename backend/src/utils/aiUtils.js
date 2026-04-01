@@ -1,84 +1,43 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAI, GoogleAIBackend, getGenerativeModel, Schema } from 'firebase/ai'
 
-const PROMPT = `
-You are a smart packing planner.
+const STRATEGY_PROMPT = `
+Create an ordered packing plan for one suitcase.
 
-Your task is to generate a step-by-step packing plan for items going into a single suitcase.
+Return JSON matching the schema.
 
-You must return JSON only. Do not include markdown. Do not include explanations. Do not include any text before or after the JSON.
+Goal:
+- place heavier items at the bottom / wheel side
+- cushion fragile items with soft items
+- keep liquids upright and separated
+- keep accessible items near the top or pockets
+- group similar items
+- use space efficiently
+- use only provided items
+- do not mention item IDs inside descriptions
 
-Each element in the plan must be an object with exactly these fields:
-- "index": integer
-- "description": string
-- "itemId": string
+Write concise, specific step descriptions that say where and how to pack each item.
 
-Output rules:
-- "index" is the step number, starting at 1 and increasing by 1 for each step.
-- "description" explains exactly how and where to pack the item inside the suitcase.
-- "itemId" must exactly match an item id from the input.
-- Return one object per packing action.
-- Do not output extra keys.
-- Do not output null values.
-- Return valid JSON that can be parsed directly.
+Input:
+- items: array of items
+- suitcase: suitcase info
+- rules: optional constraints
+`
 
-Packing behavior:
-- Pack heavy items at the bottom of the suitcase.
-- Pack heavy items near the wheel side or base when relevant.
-- Pack fragile items surrounded or cushioned by soft items.
-- Pack liquids upright, sealed, and separated inside a toiletry bag when possible.
-- Pack frequently needed items in easy-access areas such as the top layer or suitcase pockets.
-- Group similar items together when practical.
-- Use space efficiently.
-- Respect item constraints and suitcase constraints provided in the input.
-- Do not invent items or details that are not present in the input.
+const WEIGHT_PROMPT = `
+Estimate the weight in kilograms of the packable item in the provided input.
 
-Description rules:
-- Be concise but specific.
-- Mention the placement inside the suitcase, such as bottom layer, center, side edge, top layer, inner pocket, mesh compartment, shoe bag, or toiletry pouch.
-- When helpful, mention preparation steps such as rolling, folding, wrapping, or placing inside another item.
-- Never include any item id (for example item_01, uuid-style ids, or any raw id token) inside the "description" text.
-- Do not explain your reasoning outside the description.
+Return JSON only:
+{"success": boolean, "weightKg": number}
 
-You will receive input in this shape:
-- "items": array of item objects
-- "suitcase": one suitcase object
-- "rules": optional preferences and constraints
-
-Useful item fields may include:
-- id
-- name
-- category
-- quantity
-- weight
-- dimensions
-- fragility
-- compressible
-- liquid
-- mustBeAccessible
-- packingNotes
-
-Useful suitcase fields may include:
-- id
-- name
-- type
-- capacity
-- compartments
-- weightLimit
-- notes
-
-Your job is to convert the input into an ordered packing plan.
-
-Important: return an object with this shape:
-{
-  "steps": [
-    {
-      "index": 1,
-      "description": "...",
-      "itemId": "item_01"
-    }
-  ]
-}
+Rules:
+- success=true only for a real, logical, non-living, packable item.
+- If the exact item is unknown but plausible, estimate from item type, brand, size, dimensions, and material.
+- Unknown but reasonable product names should still succeed. Example: "MacBook Neo" -> true.
+- Reject animals, people, living things, impossible/fantasy objects, nonsense, abstractions, or non-items. Example: "Dog" -> false.
+- If success=false, weightKg=-1.
+- Use kilograms only.
+- No extra keys. No explanation.
 `
 
 const STRATEGY_SCHEMA = Schema.object({
@@ -93,6 +52,13 @@ const STRATEGY_SCHEMA = Schema.object({
             }),
         }),
     },
+})
+
+const WEIGHT_SCHEMA = Schema.object({
+    properties: {
+        success: Schema.boolean(),
+        weightKg: Schema.number()
+    }
 })
 
 const firebaseConfig = {
@@ -110,11 +76,15 @@ const ai = getAI(app, { backend: new GoogleAIBackend() })
 const strategyModel = getGenerativeModel(ai, {
     model: 'gemini-2.5-flash-lite',
 })
+const weightModel = getGenerativeModel(ai, {
+    model: 'gemini-2.5-flash-lite',
+})
+
 
 const sanitizeDescription = (description = '', itemId = '') => {
     const descriptionText = String(description ?? '')
 
-    if (!descriptionText) {
+    if(!descriptionText) {
         return ''
     }
 
@@ -151,9 +121,85 @@ const getPlanResultSummary = ({ success, totalWeight, baggageLimit }) => {
 
 }
 
+const normalizeWeightPrediction = (value) => {
+
+    const success = value?.success
+    const weightKg = Number(value?.weightKg)
+
+    if(success === false) {
+        return {
+            success: false,
+            weightKg: -1,
+            reason: 'Item not recognized',
+        }
+    }
+
+    if(success !== true) {
+        return {
+            success: false,
+            weightKg: -1,
+            reason: 'Server failure',
+        }
+    }
+
+    if(!Number.isFinite(weightKg) || weightKg < 0) {
+        return {
+            success: false,
+            weightKg: -1,
+            reason: 'Server failure',
+        }
+    }
+
+    return {
+        success: true,
+        weightKg: Number(weightKg.toFixed(2)),
+        reason: '',
+    }
+
+}
+
+const getPredictedItemWeight = async ({ name = '', category = '', quantity = 1 } = {}) => {
+    const fallback = {
+        success: false,
+        weightKg: -1,
+        reason: 'Server failure',
+    }
+
+    const payload = {
+        item: {
+            name: String(name ?? '').trim(),
+            category: String(category ?? '').trim(),
+            quantity: Number(quantity) || 1,
+        },
+    }
+
+    const fullPrompt = `${WEIGHT_PROMPT}\n\nInput:\n${JSON.stringify(payload)}`
+    const contents = [{
+        role: 'user',
+        parts: [{ text: fullPrompt }],
+    }]
+
+    try {
+        const result = await weightModel.generateContent({
+            contents,
+            generationConfig: {
+                responseMimeType: 'application/json',
+                responseSchema: WEIGHT_SCHEMA,
+            },
+        })
+
+        const rawText = result?.response?.text?.() ?? '{}'
+        const parsed = JSON.parse(rawText)
+        return normalizeWeightPrediction(parsed)
+    } catch (error) {
+        console.error('Failed to predict item weight with Gemini. Falling back to failed response.', error)
+        return fallback
+    }
+}
+
 const getStrategySteps = async ({ items = [] }) => {
 
-    if(!items.length) {
+    if (!items.length) {
         return { steps: [] }
     }
 
@@ -178,7 +224,7 @@ const getStrategySteps = async ({ items = [] }) => {
         },
     }
 
-    const fullPrompt = `${PROMPT}\n\nInput:\n${JSON.stringify(strategyInput)}`
+    const fullPrompt = `${STRATEGY_PROMPT}\n\nInput:\n${JSON.stringify(strategyInput)}`
     const contents = [{
         role: 'user',
         parts: [{ text: fullPrompt }],
@@ -218,6 +264,7 @@ const getStrategySteps = async ({ items = [] }) => {
 }
 
 export {
+    getPredictedItemWeight,
     getPlanResultSummary,
     getStrategySteps,
 }
