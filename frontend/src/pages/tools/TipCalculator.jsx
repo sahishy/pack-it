@@ -233,8 +233,8 @@ const TipCalculator = () => {
                 getItemId={(item) => item.country}
                 getItemLabel={(item) => item.country}
                 getItemDescription={(item) => {
-                    if (Number.isFinite(item.tip_low) && Number.isFinite(item.tip_high)) {
-                        return `${item.tip_low}% - ${item.tip_high}% typical`
+                    if(item.tip_low !== 0 && item.tip_high !== 0) {
+                        return `${item.tip_low}% - ${item.tip_high}% Standard`
                     }
 
                     return item.other ?? null
