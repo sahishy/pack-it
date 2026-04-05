@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { db } from '../lib/firebaseAdmin.js'
 import { serializeDoc } from '../utils/firestoreUtils.js'
-import { getPredictedItemWeight } from '../utils/aiUtils.js'
+import { getPredictedItemMetrics } from '../utils/aiUtils.js'
 
 const itemsRouter = Router()
 
@@ -66,6 +66,7 @@ itemsRouter.post('/trips/:tripId/items', async (req, res) => {
         category: itemData.category,
         quantity: Number(itemData.quantity),
         weight: null,
+        dimensions: null,
         checked: false,
         createdAt: new Date(),
     }
@@ -77,7 +78,7 @@ itemsRouter.post('/trips/:tripId/items', async (req, res) => {
 
 })
 
-itemsRouter.patch('/items/:itemId/weight', async (req, res) => {
+itemsRouter.patch('/items/:itemId/metrics', async (req, res) => {
 
     const uid = req.user.uid
     const { itemId } = req.params
@@ -94,22 +95,77 @@ itemsRouter.patch('/items/:itemId/weight', async (req, res) => {
         return res.status(403).json({ message: 'Forbidden.' })
     }
 
-    const weightPrediction = await getPredictedItemWeight({
+    const metricsPrediction = await getPredictedItemMetrics({
         name: item.name,
         category: item.category,
         quantity: item.quantity,
     })
 
     await itemRef.update({
-        weight: weightPrediction,
+        weight: metricsPrediction.weight,
+        dimensions: metricsPrediction.dimensions,
         updatedAt: new Date(),
     })
 
     const updated = await itemRef.get()
     return res.json({
-        weight: weightPrediction,
+        weight: metricsPrediction.weight,
+        dimensions: metricsPrediction.dimensions,
         item: serializeDoc(updated),
     })
+
+})
+
+itemsRouter.patch('/items/:itemId/manual-metrics', async (req, res) => {
+
+    const uid = req.user.uid
+    const { itemId } = req.params
+    const { weight = {}, dimensions = {} } = req.body ?? {}
+    const itemRef = getItemRef(itemId)
+    const snapshot = await itemRef.get()
+
+    if(!snapshot.exists) {
+        return res.status(404).json({ message: 'Item not found.' })
+    }
+
+    if(snapshot.data()?.userId !== uid) {
+        return res.status(403).json({ message: 'Forbidden.' })
+    }
+
+    const nextWeightKg = Number(weight?.weightKg)
+    const nextLengthCm = Number(dimensions?.lengthCm)
+    const nextWidthCm = Number(dimensions?.widthCm)
+    const nextHeightCm = Number(dimensions?.heightCm)
+
+    if(!Number.isFinite(nextWeightKg) || nextWeightKg <= 0) {
+        return res.status(400).json({ message: 'Weight must be greater than 0.' })
+    }
+
+    if(!Number.isFinite(nextLengthCm) || !Number.isFinite(nextWidthCm) || !Number.isFinite(nextHeightCm) || nextLengthCm <= 0 || nextWidthCm <= 0 || nextHeightCm <= 0) {
+        return res.status(400).json({ message: 'All dimensions must be greater than 0.' })
+    }
+
+    await itemRef.update({
+        weight: {
+            success: true,
+            weightKg: Number(nextWeightKg.toFixed(2)),
+            confidence: 1,
+            reason: '',
+        },
+        dimensions: {
+            success: true,
+            lengthCm: Number(nextLengthCm.toFixed(2)),
+            widthCm: Number(nextWidthCm.toFixed(2)),
+            heightCm: Number(nextHeightCm.toFixed(2)),
+            confidence: 1,
+            orientationAssumption: 'Manual override',
+            reason: '',
+        },
+        updatedAt: new Date(),
+    })
+
+    const updated = await itemRef.get()
+    return res.json({ item: serializeDoc(updated) })
 
 })
 

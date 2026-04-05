@@ -11,9 +11,9 @@ const createItem = async (_uid, tripId, itemData) => {
     }
 
     try {
-        await apiPatch(`/api/items/${itemId}/weight`)
+        await apiPatch(`/api/items/${itemId}/metrics`)
     } catch (error) {
-        console.error('Failed to predict item weight', error)
+        console.error('Failed to predict item metrics', error)
     }
 
     return itemId
@@ -53,6 +53,19 @@ const updateItemChecked = async (itemId, checked) => {
     await apiPatch(`/api/items/${itemId}/checked`, { checked })
 }
 
+const updateItemManualMetrics = async (itemId, { weightKg, lengthCm, widthCm, heightCm }) => {
+    await apiPatch(`/api/items/${itemId}/manual-metrics`, {
+        weight: {
+            weightKg,
+        },
+        dimensions: {
+            lengthCm,
+            widthCm,
+            heightCm,
+        },
+    })
+}
+
 const removeItem = async (itemId) => {
     await apiDelete(`/api/items/${itemId}`)
 }
@@ -69,6 +82,7 @@ export {
     createItem,
     subscribeToTripItems,
     updateItemChecked,
+    updateItemManualMetrics,
     removeItem,
     removeTripItems,
 }

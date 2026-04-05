@@ -10,7 +10,7 @@ const getInitials = (profile) => {
     return (firstInitial + lastInitial) || '?'
 }
 
-const UserProfile = ({ displayName, email, onLogout }) => {
+const UserProfile = ({ displayName, email, onLogout, className }) => {
 
     const { profile } = useAuth();
     const navigate = useNavigate()
@@ -18,7 +18,7 @@ const UserProfile = ({ displayName, email, onLogout }) => {
     const profilePictureUrl = profile?.profilePictureUrl?.trim?.() ?? ''
 
     return (
-        <div className='flex gap-2 items-center'>
+        <div className={`flex gap-2 items-center ${className}`}>
             <span className='hidden text-sm font-medium text-neutral0 lg:flex'>{profile?.firstName || 'Error'} {profile?.lastName || ''}</span>
             <Dropdown
                 trigger={({ open, toggle }) => (

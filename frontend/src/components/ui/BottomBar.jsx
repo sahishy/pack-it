@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { FaHouse, FaPlus, FaWrench } from 'react-icons/fa6'
+import { FaHouse, FaPlus, FaSuitcaseRolling, FaWrench } from 'react-icons/fa6'
 import Button from './Button'
+import UserProfile from '../auth/UserProfile'
 
 const Tab = ({ to, label, icon: Icon, end = false }) => {
     return (
@@ -14,13 +15,13 @@ const Tab = ({ to, label, icon: Icon, end = false }) => {
                 }`
             )}
         >
-            <Icon className='text-lg' />
+            <Icon className='text-sm' />
             <span>{label}</span>
         </NavLink>
     )
 }
 
-const BottomBar = () => {
+const BottomBar = ({ displayName, email, onLogout }) => {
 
     const navigate = useNavigate()
 
@@ -28,25 +29,34 @@ const BottomBar = () => {
         <nav
             className='fixed w-full bottom-0 z-60 border-t border-neutral3 bg-neutral5/80 backdrop-blur pt-4 pb-[max(env(safe-area-inset-bottom),2rem)] lg:hidden'
         >
-            <div className='mx-auto grid w-full max-w-4xl grid-cols-3 items-center'>
-                <div className='flex justify-center'>
+            <div className='mx-auto flex items-center justify-between w-full max-w-4xl'>
+                <div className='flex-1 flex justify-center'>
                     <Tab to='/home' label='Home' icon={FaHouse} end />
                 </div>
 
-                <div className='flex justify-center'>
+                <div className='flex-1 flex justify-center'>
+                    <Tab to='/suitcases' label='Suitcases' icon={FaSuitcaseRolling} end />
+                </div>
+
+                <div className='flex-1 flex justify-center'>
                     <Button
                         type='button'
                         aria-label='Create trip'
                         onClick={() => navigate('/trips/new')}
-                        className={`absolute bottom-8 h-20 w-20 rounded-full! active:scale-90`}
+                        className={`absolute bottom-12 h-16 w-16 rounded-full! active:scale-90`}
                     >
                         <FaPlus className='text-2xl' />
                     </Button>
                 </div>
 
-                <div className='flex justify-center'>
+                <div className='flex-1 flex justify-center'>
                     <Tab to='/tools' label='Tools' icon={FaWrench} />
                 </div>
+
+                <div className='flex-1 flex mb-2 justify-center'>
+                    <UserProfile displayName={displayName} email={email} onLogout={onLogout} />
+                </div>
+
             </div>
         </nav>
     )

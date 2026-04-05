@@ -7,17 +7,20 @@ import { AuthProvider } from './contexts/AuthContext.jsx'
 import { TripsProvider } from './contexts/TripsContext.jsx'
 import { ItemsProvider } from './contexts/ItemsContext.jsx'
 import { PlansProvider } from './contexts/PlansContext.jsx'
+import { SuitcasesProvider } from './contexts/SuitcasesContext.jsx'
 
 createRoot(document.getElementById('root')).render(
 	<StrictMode>
 		<BrowserRouter>
 			<AuthProvider>
 				<TripsProvider>
-					<ItemsProvider>
-						<PlansProvider>
-							<App />
-						</PlansProvider>
-					</ItemsProvider>
+					<SuitcasesProvider>
+						<ItemsProvider>
+							<PlansProvider>
+								<App />
+							</PlansProvider>
+						</ItemsProvider>
+					</SuitcasesProvider>
 				</TripsProvider>
 			</AuthProvider>
 		</BrowserRouter>

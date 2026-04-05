@@ -10,6 +10,7 @@ const ITEM_CATEGORY_CONFIG = [
 ]
 
 const ITEM_CATEGORIES = ITEM_CATEGORY_CONFIG.map((category) => category.name)
+const ITEM_CONFIDENCE_WARNING_THRESHOLD = 0.7
 
 const normalizeCategory = (category) => category?.trim()?.toLowerCase()
 
@@ -43,6 +44,39 @@ const getResolvedItemWeightKg = (itemWeight) => {
     return 0
 }
 
+const getResolvedItemDimensionsCm = (dimensions) => {
+    if(!dimensions || dimensions?.success !== true) {
+        return {
+            lengthCm: 0,
+            widthCm: 0,
+            heightCm: 0,
+        }
+    }
+
+    return {
+        lengthCm: Number(dimensions.lengthCm) || 0,
+        widthCm: Number(dimensions.widthCm) || 0,
+        heightCm: Number(dimensions.heightCm) || 0,
+    }
+}
+
+const hasLowConfidence = (confidence) => {
+    const numericConfidence = Number(confidence)
+
+    if(!Number.isFinite(numericConfidence)) {
+        return false
+    }
+
+    return numericConfidence < ITEM_CONFIDENCE_WARNING_THRESHOLD
+}
+
+const hasLowItemMetricConfidence = (item) => {
+    const weightConfidence = item?.weight?.confidence
+    const dimensionsConfidence = item?.dimensions?.confidence
+
+    return hasLowConfidence(weightConfidence) || hasLowConfidence(dimensionsConfidence)
+}
+
 const getTotalWeight = (items) => {
     return items.reduce((total, item) => {
         const itemWeight = item?.weight
@@ -62,8 +96,12 @@ const getTotalWeight = (items) => {
 export {
     ITEM_CATEGORY_CONFIG,
     ITEM_CATEGORIES,
+    ITEM_CONFIDENCE_WARNING_THRESHOLD,
     estimateItemWeight,
     getCategoryEmoji,
     getTotalWeight,
-    getResolvedItemWeightKg
+    getResolvedItemWeightKg,
+    getResolvedItemDimensionsCm,
+    hasLowConfidence,
+    hasLowItemMetricConfidence,
 }

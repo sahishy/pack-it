@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { FaArrowTrendUp, FaPlus, FaSuitcase, FaSuitcaseRolling } from 'react-icons/fa6'
+import { FaArrowTrendUp, FaPlane, FaPlaneDeparture, FaPlus, FaSuitcase, FaSuitcaseRolling } from 'react-icons/fa6'
 import { useTrips } from '../contexts/TripsContext'
 import Trip from '../components/trips/Trip'
 import TripGhost from '../components/ghost/TripGhost'
@@ -47,7 +47,7 @@ const Home = () => {
             <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
                 <div className='m-6 flex max-w-4xl flex-col gap-6 px-6 py-10 rounded-xl bg-linear-to-r from-primary0 to-primary1 lg:m-auto lg:bg-none'>
                     <div className='flex flex-col gap-2 text-center items-center lg:text-left lg:items-start'>
-                        <h2 className='flex gap-2 items-center text-sm text-white/80'><PiHandWavingFill className='text-lg'/> Ready for adventure?</h2>
+                        <h2 className='flex gap-2 items-center text-sm text-white/80'><PiHandWavingFill className='text-lg' /> Ready for adventure?</h2>
                         <h1 className='text-4xl lg:text-5xl font-bold text-white'>Welcome to Pack-It</h1>
                         <p className='text-white/80'>Your intelligent travel packing assistant</p>
                     </div>
@@ -88,7 +88,15 @@ const Home = () => {
                             <TripGhost />
                         </div>
                     ) : sortedTrips.length === 0 ? (
-                        <p className='mt-2 text-sm text-neutral1'>No trips yet. Click + to create your first one.</p>
+                        <div className='flex flex-col gap-3 items-center justify-center py-16'>
+                            <div className='p-6 bg-neutral4 rounded-full'>
+                                <FaPlaneDeparture className='text-4xl text-neutral1' />
+                            </div>
+                            <div className='flex flex-col items-center'>
+                                <p className='text-neutral0 font-semibold'>No trips yet.</p>
+                                <p className='text-sm text-neutral1'>Click + to create your first one.</p>
+                            </div>
+                        </div>
                     ) : (
                         <div className='mt-4 grid gap-4 grid-cols-1 lg:grid-cols-2'>
                             {sortedTrips.map((trip) => (

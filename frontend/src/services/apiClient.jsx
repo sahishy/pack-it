@@ -24,11 +24,13 @@ const request = async (path, options = {}) => {
 
     const token = await user.getIdToken()
 
+    const isFormDataBody = typeof FormData !== 'undefined' && options.body instanceof FormData
+
     const response = await fetch(`${API_BASE_URL}${path}`, {
         ...options,
         headers: {
-            'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
+            ...(isFormDataBody ? {} : { 'Content-Type': 'application/json' }),
             ...(options.headers ?? {}),
         },
     })
@@ -66,10 +68,16 @@ const apiDelete = (path, body) => request(path, {
     body: body === undefined ? undefined : JSON.stringify(body),
 })
 
+const apiPostFormData = (path, formData) => request(path, {
+    method: 'POST',
+    body: formData,
+})
+
 export {
     apiGet,
     apiPost,
     apiPut,
     apiPatch,
     apiDelete,
+    apiPostFormData,
 }

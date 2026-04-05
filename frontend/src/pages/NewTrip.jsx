@@ -120,7 +120,7 @@ const NewTrip = () => {
 
                     <div className='flex flex-col gap-3 items-center'>
                         <div className='justify-self-center p-4 bg-linear-to-t from-primary0 to-primary1 rounded-full'>
-                            <BsStars className='text-neutral5 text-3xl' />
+                            <BsStars className='text-white text-3xl' />
                         </div>
                         <div>
                             <h1 className='text-3xl font-semibold text-neutral0 text-center'>Create a new trip</h1>

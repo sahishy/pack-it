@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { FaLocationDot, FaScaleBalanced, FaCircleCheck, FaHouse, FaRegCalendar } from 'react-icons/fa6'
+import { FaScaleBalanced, FaCircleCheck, FaHouse, FaRegCalendar } from 'react-icons/fa6'
 import { FiPackage, FiCheckCircle } from 'react-icons/fi'
 import Topbar from '../components/ui/Topbar'
 import Return from '../components/ui/Return'
@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useTrips } from '../contexts/TripsContext'
 import { useTripPlan } from '../contexts/PlansContext'
 import { useTripItems } from '../contexts/ItemsContext'
+import { useSuitcases } from '../contexts/SuitcasesContext'
 import { getTripById, getTripDurationDays } from '../utils/tripUtils'
 import { getCategoryEmoji, getResolvedItemWeightKg, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
 import { TbConfettiFilled } from 'react-icons/tb'
@@ -27,14 +28,20 @@ const StrategyOverview = () => {
     const { trips, loading: tripsLoading, error: tripsError } = useTrips()
     const { plan, loading: planLoading, error: planError } = useTripPlan(tripId)
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
+    const { suitcases } = useSuitcases()
     const [currentStepIndex, setCurrentStepIndex] = useState(0)
     const [isCompleted, setIsCompleted] = useState(false)
-    const { formatWeight } = useWeightFormatter()
+    const { formatWeight, formatDimensions } = useWeightFormatter()
 
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
     const steps = plan?.strategy?.steps ?? []
     const totalSteps = steps.length
     const currentStep = steps[currentStepIndex] ?? null
+    const currentItem = useMemo(() => items.find((item) => item.id === currentStep?.itemId) ?? null, [items, currentStep?.itemId])
+    const currentSuitcase = useMemo(() => suitcases.find((suitcase) => suitcase.id === currentStep?.suitcaseId) ?? null, [suitcases, currentStep?.suitcaseId])
+    const currentOriginalDimensions = currentStep?.itemDimensionsOriginal ?? currentItem?.dimensions
+    const currentPackedDimensions = currentStep?.itemDimensionsPacked ?? currentOriginalDimensions
+    const hasPackingAdjustment = currentStep?.packingAdjustment && currentStep.packingAdjustment !== 'none'
     const progressPercent = totalSteps > 0 ? Math.round(((currentStepIndex) / totalSteps) * 100) : 0
     const isFinalStep = totalSteps > 0 && currentStepIndex === totalSteps - 1
     const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
@@ -100,7 +107,7 @@ const StrategyOverview = () => {
     }
 
     const handleNext = () => {
-        if(isFinalStep) {
+        if (isFinalStep) {
             void setTripPackedStatus(tripId, true)
             setIsCompleted(true)
             return
@@ -121,7 +128,7 @@ const StrategyOverview = () => {
                         </div>
                         <div>
                             <h1 className='text-3xl font-semibold text-neutral0'>All Set!</h1>
-                            <p className='text-neutral1'>Your {trip.destination} trip is ready</p>                            
+                            <p className='text-neutral1'>Your {trip.destination} trip is ready</p>
                         </div>
                     </section>
 
@@ -213,11 +220,39 @@ const StrategyOverview = () => {
                 </div>
 
                 <Card className='flex min-h-80 flex-col items-center justify-center gap-5 text-center'>
+                    
                     <div className='flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-r from-primary0 to-primary1'>
                         <span className='text-2xl font-semibold text-white'>{currentStep.index}</span>
                     </div>
 
                     <p className='max-w-2xl text-lg text-neutral0/80'>{currentStep.description}</p>
+                    {/* {hasPackingAdjustment && currentStep?.packingAdjustmentReason ? (
+                        <p className='max-w-2xl text-sm text-neutral1'>{currentStep.packingAdjustmentReason}</p>
+                    ) : null} */}
+
+                    <div className='flex gap-3 w-full'>
+                        <div className='w-full rounded-xl border border-neutral3 bg-neutral4 p-3 text-left'>
+                            <p className='text-sm text-neutral1'>Currently packing</p>
+                            <p className='text-base font-semibold text-neutral0'>{currentItem?.name ?? 'Selected item'}</p>
+                            <p className='text-xs text-neutral1'>
+                                Item size: {formatDimensions(currentOriginalDimensions, { decimals: 1 })}
+                            </p>
+                            {hasPackingAdjustment ? (
+                                <p className='text-xs text-primary0'>
+                                    Packed ({currentStep?.packingAdjustment}): {formatDimensions(currentPackedDimensions, { decimals: 1 })}
+                                </p>
+                            ) : null}
+                        </div>
+
+                        <div className='w-full rounded-xl border border-neutral3 bg-neutral4 p-3 text-left'>
+                            <p className='text-sm text-neutral1'>Target suitcase</p>
+                            <p className='text-base font-semibold text-neutral0'>{currentSuitcase?.name ?? 'Main Suitcase'}</p>
+                            <p className='text-xs text-neutral1'>
+                                Suitcase size: {formatDimensions(currentSuitcase?.dimensions, { decimals: 1 })}
+                            </p>
+                        </div>
+
+                    </div>
 
                     <Button className='w-full flex gap-3' onClick={handleNext}>
                         {isFinalStep ? (
@@ -240,7 +275,7 @@ const SummaryMetric = ({ icon, value, label }) => {
             <div>{icon}</div>
             <div className='flex flex-col items-center'>
                 <p className='text-xl font-semibold text-neutral0'>{value}</p>
-                <p className='text-sm text-neutral1'>{label}</p>               
+                <p className='text-sm text-neutral1'>{label}</p>
             </div>
         </div>
     )

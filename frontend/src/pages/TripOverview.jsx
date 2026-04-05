@@ -11,7 +11,7 @@ import { useTrips } from '../contexts/TripsContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import Return from '../components/ui/Return'
 import { FiEdit, FiPackage, FiTrash2 } from 'react-icons/fi'
-import { removeItem, removeTripItems, updateItemChecked } from '../services/itemService'
+import { removeItem, removeTripItems, updateItemChecked, updateItemManualMetrics } from '../services/itemService'
 import { deleteTripPlan } from '../services/planService'
 import { getTripById, getTripThumbnail } from '../utils/tripUtils'
 import LoadingScreen from '../components/ui/LoadingScreen'
@@ -22,9 +22,12 @@ import { FaRegCalendar } from 'react-icons/fa6'
 import { formatDisplayDate } from '../utils/formatters'
 import { getTotalWeight } from '../utils/itemUtils'
 import { useTripPlan } from '../contexts/PlansContext'
+import { useSuitcases } from '../contexts/SuitcasesContext'
 import Dropdown from '../components/popover/Dropdown'
 import { TbDots } from 'react-icons/tb'
 import useWeightFormatter from '../hooks/useWeightFormatter'
+import EditItemModal from '../components/items/EditItemModal'
+import NoSuitcaseModal from '../components/plans/NoSuitcaseModal'
 
 const getCreatedAtMs = (item) => {
     const createdAt = item?.createdAt
@@ -52,11 +55,16 @@ const TripOverview = () => {
     const { trips, loading: tripsLoading, error: tripsError, removeTrip, deleting, deleteError } = useTrips()
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
     const { plan, loading: planLoading } = useTripPlan(tripId)
+    const { suitcases, loading: suitcasesLoading } = useSuitcases()
 
     const [showAddForm, setShowAddForm] = useState(false)
     const [updatingItemIds, setUpdatingItemIds] = useState(new Set())
     const [deletingItemIds, setDeletingItemIds] = useState(new Set())
+    const [editingItem, setEditingItem] = useState(null)
+    const [savingEdit, setSavingEdit] = useState(false)
+    const [editError, setEditError] = useState(null)
     const [actionError, setActionError] = useState(null)
+    const [showNoSuitcaseModal, setShowNoSuitcaseModal] = useState(false)
     const { formatWeight } = useWeightFormatter()
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
@@ -67,21 +75,22 @@ const TripOverview = () => {
     const isOverWeightLimit = totalWeight > (trip?.baggageLimit ?? 0)
     const flightClassLabel = trip?.flightClass || '—'
     const hasExistingPlan = Boolean(plan)
+    const hasSuitcases = suitcases.length > 0
     const isItemsSectionBusy = itemsLoading || deleting
     const hasFailedWeight = items.some((item) => item?.weight?.success === false)
     const orderedItems = useMemo(() => {
         return [...items].sort((a, b) => getCreatedAtMs(a) - getCreatedAtMs(b))
     }, [items])
 
-    if(!user) {
+    if (!user) {
         return <Navigate to='/login' replace />
     }
 
-    if(tripsLoading) {
+    if (tripsLoading) {
         return <LoadingScreen text='Loading trip...' className='bg-neutral4' />
     }
 
-    if(tripsError) {
+    if (tripsError) {
         return <ErrorScreen text={tripsError?.message ?? 'Failed to load trip.'} className='bg-neutral4' />
     }
 
@@ -148,12 +157,39 @@ const TripOverview = () => {
         }
     }
 
+    const handleSaveItemMetrics = async (payload) => {
+        if (!editingItem?.id) {
+            return
+        }
+
+        try {
+            setSavingEdit(true)
+            setEditError(null)
+            await updateItemManualMetrics(editingItem.id, payload)
+            await deleteTripPlan(user.uid, tripId)
+            setEditingItem(null)
+        } catch (errorValue) {
+            setEditError(errorValue)
+        } finally {
+            setSavingEdit(false)
+        }
+    }
+
+    const handleOpenPlanOverview = () => {
+        if (!suitcasesLoading && !hasSuitcases) {
+            setShowNoSuitcaseModal(true)
+            return
+        }
+
+        navigate(`/trips/${tripId}/plan`)
+    }
+
     return (
         <main className='min-h-screen bg-neutral5'>
             <Topbar displayName={displayName} email={user.email} onLogout={logout} />
 
             <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
-                <Return text={'Back to home'}/>
+                <Return text={'Back to home'} />
                 <>
                     <Card className='group overflow-hidden p-0!'>
                         <div className='relative h-48 w-full'>
@@ -179,7 +215,8 @@ const TripOverview = () => {
                                         <button
                                             type='button'
                                             onClick={toggle}
-                                            className={`rounded-lg p-2 text-white transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 bg-neutral0/4 backdrop-blur ${open ? 'opacity-100 bg-neutral0/8' : 'opacity-100 hover:bg-neutral0/8'}`}
+                                            // className={`rounded-lg p-2 text-white transition md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100 bg-neutral0/4 backdrop-blur ${open ? 'opacity-100 bg-neutral0/8' : 'opacity-100 hover:bg-neutral0/8'}`}
+                                            className={`rounded-lg p-2 text-white transition bg-neutral0/4 backdrop-blur ${open ? 'opacity-100 bg-neutral0/8' : 'opacity-100 hover:bg-neutral0/8'}`}
                                             aria-haspopup='menu'
                                             aria-expanded={open}
                                             aria-label='Trip actions'
@@ -199,7 +236,7 @@ const TripOverview = () => {
                                                 className='w-full rounded-lg px-3 py-2 text-left text-sm font-medium flex items-center gap-3 text-neutral0 transition hover:bg-neutral4'
                                                 role='menuitem'
                                             >
-                                                <FiEdit className='text-neutral1'/> Edit
+                                                <FiEdit className='text-neutral1' /> Edit
                                             </button>
 
                                             <hr className='border-neutral3' />
@@ -211,7 +248,7 @@ const TripOverview = () => {
                                                 className='w-full rounded-lg px-3 py-2 text-left text-sm font-medium flex items-center gap-3 text-negative1 transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
                                                 role='menuitem'
                                             >
-                                                <FiTrash2/> {deleting ? 'Deleting...' : 'Delete'}
+                                                <FiTrash2 /> {deleting ? 'Deleting...' : 'Delete'}
                                             </button>
                                         </div>
                                     )}
@@ -274,9 +311,14 @@ const TripOverview = () => {
                         ) : itemsError ? (
                             <ErrorScreen text={itemsError.message ?? 'Failed to load items.'} className='bg-neutral4' />
                         ) : items.length === 0 ? (
-                            <div className='flex flex-col gap-3 py-16 items-center justify-center'>
-                                <FiPackage className='text-neutral2 text-6xl'/>
-                                <p className='text-neutral1'>No items added yet. Start building your packing list!</p>
+                            <div className='flex flex-col gap-3 items-center justify-center py-16'>
+                                <div className='p-6 bg-neutral4 rounded-full'>
+                                    <FiPackage className='text-4xl text-neutral1' />
+                                </div>
+                                <div className='flex flex-col items-center'>
+                                    <p className='text-neutral0 font-semibold'>No items added yet.</p>
+                                    <p className='text-sm text-neutral1'>Start building your packing list!</p>
+                                </div>
                             </div>
                         ) : (
                             <div className='flex flex-col gap-3'>
@@ -286,6 +328,7 @@ const TripOverview = () => {
                                         item={item}
                                         onToggleChecked={handleToggleChecked}
                                         onDelete={handleDeleteItem}
+                                        onEdit={(itemValue) => setEditingItem(itemValue)}
                                         isUpdating={updatingItemIds.has(item.id)}
                                         isDeleting={deletingItemIds.has(item.id)}
                                     />
@@ -299,7 +342,7 @@ const TripOverview = () => {
                             className='flex gap-2'
                             loading={planLoading}
                             disabled={hasFailedWeight}
-                            onClick={() => navigate(`/trips/${tripId}/plan`)}
+                            onClick={handleOpenPlanOverview}
                         >
                             {hasExistingPlan ? <FiSearch /> : <BsStars />}
                             {hasExistingPlan ? 'View AI Packing Suggestions' : 'Get AI Packing Suggestions'}
@@ -307,8 +350,28 @@ const TripOverview = () => {
                     ) : null}
                 </>
 
-                
+
             </div>
+
+            <EditItemModal
+                open={Boolean(editingItem)}
+                item={editingItem}
+                onClose={() => {
+                    if (!savingEdit) {
+                        setEditingItem(null)
+                        setEditError(null)
+                    }
+                }}
+                onSubmit={handleSaveItemMetrics}
+                saving={savingEdit}
+                error={editError}
+            />
+
+            <NoSuitcaseModal
+                open={showNoSuitcaseModal}
+                onClose={() => setShowNoSuitcaseModal(false)}
+                onAddSuitcase={() => navigate('/suitcases')}
+            />
         </main>
     )
 }

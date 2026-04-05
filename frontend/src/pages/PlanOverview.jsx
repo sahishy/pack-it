@@ -44,6 +44,7 @@ const PlanOverview = () => {
     const isSuccess = Boolean(planResult?.success)
     const strategySteps = plan?.strategy?.steps ?? []
     const hasGeneratedStrategy = strategySteps.length > 0
+    const strategyLoadingText = 'AI is planning your packing strategy...'
 
     useEffect(() => {
         if (!trip || itemsLoading || planLoading || planResult || generatingResult) {
@@ -84,6 +85,10 @@ const PlanOverview = () => {
 
     if (items.length === 0) {
         return <Navigate to={`/trips/${tripId}`} replace />
+    }
+
+    if (generatingStrategy && !hasGeneratedStrategy) {
+        return <LoadingScreen text={strategyLoadingText} />
     }
 
     const canGenerateStrategy = isSuccess && !hasGeneratedStrategy

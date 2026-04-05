@@ -21,6 +21,8 @@ import StrategyOverview from './pages/StrategyOverview'
 import LoadingScreen from './components/ui/LoadingScreen'
 import Topbar from './components/ui/Topbar'
 import BottomBar from './components/ui/BottomBar'
+import Suitcases from './pages/Suitcases'
+import NewSuitcase from './pages/NewSuitcase'
 
 const resolveTheme = (preference) => {
 
@@ -68,7 +70,7 @@ const ProtectedTopbarLayout = () => {
 	const location = useLocation()
 	const { user, profile, logout } = useAuth()
 	const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user.email
-	const showBottomBar = location.pathname.startsWith('/home') || location.pathname.startsWith('/tools') || location.pathname.startsWith('/settings')
+	const showBottomBar = location.pathname.startsWith('/home') || location.pathname.startsWith('/suitcases') || location.pathname.startsWith('/tools') || location.pathname.startsWith('/settings')
 
 	return (
 		<>
@@ -76,7 +78,7 @@ const ProtectedTopbarLayout = () => {
 			<div className={showBottomBar ? 'pb-32 lg:pb-0' : ''}>
 				<Outlet />
 			</div>
-			{showBottomBar ? <BottomBar /> : null}
+			{showBottomBar ? <BottomBar displayName={displayName} email={user.email} onLogout={logout}/> : null}
 		</>
 	)
 
@@ -155,6 +157,7 @@ const App = () => {
 				}
 			>
 				<Route path='/home' element={<Home />} />
+				<Route path='/suitcases' element={<Suitcases />} />
 				<Route path='/tools' element={<Tools />} />
 				<Route path='/settings' element={<Settings />} />
 				<Route path='/tools/tip-calculator' element={<TipCalculator />} />
@@ -164,6 +167,15 @@ const App = () => {
 				<Route path='/tools/liquid-checker' element={<LiquidChecker />} />
 				<Route path='/tools/emergency-info' element={<EmergencyInfo />} />
 			</Route>
+
+			<Route
+				path='/suitcases/new'
+				element={
+					<ProtectedRoute>
+						<NewSuitcase />
+					</ProtectedRoute>
+				}
+			/>
 
 			<Route
 				path='/trips/new'

@@ -189,7 +189,7 @@ const BasePopover = ({ trigger, children, contentClassName = '' }) => {
                             transformOrigin: placement === 'top' ? 'bottom center' : 'top center',
                             ...popoverStyle,
                         }}
-                        className={`z-50 transition duration-150 ease-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${contentClassName}`}
+                        className={`z-70 transition duration-150 ease-out ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'} ${contentClassName}`}
                     >
                         {children({ close: () => setOpen(false) })}
                     </div>,

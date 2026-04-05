@@ -6,11 +6,12 @@ import usersRouter from './routes/users.js'
 import tripsRouter from './routes/trips.js'
 import itemsRouter from './routes/items.js'
 import plansRouter from './routes/plans.js'
+import suitcasesRouter from './routes/suitcases.js'
 
 const app = express()
 
 app.use(cors({ origin: config.frontendOrigin }))
-app.use(express.json())
+app.use(express.json({ limit: '35mb' }))
 
 app.get('/health', (_req, res) => {
     res.json({ ok: true })
@@ -20,6 +21,7 @@ app.use('/api/users', requireAuth, usersRouter)
 app.use('/api', requireAuth, tripsRouter)
 app.use('/api', requireAuth, itemsRouter)
 app.use('/api', requireAuth, plansRouter)
+app.use('/api', requireAuth, suitcasesRouter)
 
 app.use((error, _req, res, _next) => {
     console.error(error)

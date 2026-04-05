@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { db } from '../lib/firebaseAdmin.js'
 import { serializeDoc } from '../utils/firestoreUtils.js'
-import { getPlanResultSummary, getStrategySteps } from '../utils/aiUtils.js'
+import { getPlanResultSummary, getStrategySemanticSteps } from '../utils/aiUtils.js'
 import {
     buildDefaultPlanPayload,
     DEFAULT_PLAN_STRATEGY,
@@ -128,6 +128,8 @@ plansRouter.post('/trips/:tripId/plan/result', async (req, res) => {
     await planRef.update({
         result,
         strategy: DEFAULT_PLAN_STRATEGY,
+        strategyStatus: null,
+        strategyMeta: null,
         updatedAt: new Date(),
     })
 
@@ -147,18 +149,40 @@ plansRouter.post('/trips/:tripId/plan/strategy', async (req, res) => {
         return res.status(ownership.status).json({ message: ownership.message })
     }
 
-    const aiStrategy = await getStrategySteps({ items })
-    const strategy = normalizeStrategy(aiStrategy)
+    const suitcasesSnapshot = await db
+        .collection('suitcases')
+        .where('userId', '==', uid)
+        .get()
+
+    const suitcases = suitcasesSnapshot.docs.map(serializeDoc)
     const planId = await ensureTripPlan(uid, ownership.tripRef, tripId)
     const planRef = db.collection('plans').doc(planId)
 
     await planRef.update({
-        strategy,
+        strategyStatus: 'planning',
         updatedAt: new Date(),
     })
 
+    const semanticStrategy = await getStrategySemanticSteps({ items, suitcases })
+    const normalizedSemanticStrategy = normalizeStrategy(semanticStrategy)
+
+    await planRef.update({
+        strategy: normalizedSemanticStrategy,
+        strategyStatus: 'completed',
+        strategyMeta: {
+            stageA: semanticStrategy?.meta ?? { source: 'fallback', error: 'Unknown Stage A status.' },
+            stageB: {
+                source: 'disabled',
+                error: null,
+            },
+        },
+        updatedAt: new Date(),
+    })
+
+    // re-enable stage B layout generation (getStrategyLayoutSteps) later when coordinate visuals are brought back
+
     const snapshot = await planRef.get()
-    return res.json({ strategy, plan: serializeDoc(snapshot) })
+    return res.json({ strategy: normalizedSemanticStrategy, plan: serializeDoc(snapshot) })
 
 })
 
