@@ -99,16 +99,34 @@ suitcasesRouter.delete('/suitcases/:suitcaseId', async (req, res) => {
 })
 
 suitcasesRouter.post('/suitcases/vision', upload.single('image'), async (req, res) => {
+    const uid = req.user.uid
     const imageFile = req.file
 
     if(!imageFile?.buffer) {
         return res.status(400).json({ message: 'Suitcase image is required.' })
     }
 
+    const aiCallStartedAt = Date.now()
+    console.info('[AI][route] suitcase-vision.start', {
+        route: 'POST /suitcases/vision',
+        uid,
+        mimeType: imageFile.mimetype || 'image/jpeg',
+        fileSizeBytes: imageFile.size,
+    })
+
     const prediction = await getPredictedSuitcaseFromImage({
         imageBuffer: imageFile.buffer,
         mimeType: imageFile.mimetype || 'image/jpeg',
     })
+
+    console.info('[AI][route] suitcase-vision.success', {
+        route: 'POST /suitcases/vision',
+        uid,
+        mimeType: imageFile.mimetype || 'image/jpeg',
+        fileSizeBytes: imageFile.size,
+        elapsedMs: Date.now() - aiCallStartedAt,
+    })
+
     return res.json({ prediction })
 })
 

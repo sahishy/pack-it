@@ -70,6 +70,15 @@ const TripOverview = () => {
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
     const formattedStartDate = formatDisplayDate(trip?.startDate)
     const formattedEndDate = formatDisplayDate(trip?.endDate)
+    const hasStartDate = Boolean(trip?.startDate)
+    const hasEndDate = Boolean(trip?.endDate)
+    const dateRangeLabel = hasStartDate && hasEndDate
+        ? `${formattedStartDate} → ${formattedEndDate}`
+        : hasStartDate
+            ? `Starts ${formattedStartDate}`
+            : hasEndDate
+                ? `Ends ${formattedEndDate}`
+                : 'Dates not set'
     const formattedTotalWeight = formatWeight(totalWeight, { decimals: 2 })
     const formattedBaggageLimit = formatWeight(trip?.baggageLimit ?? 0, { decimals: 2 })
     const isOverWeightLimit = totalWeight > (trip?.baggageLimit ?? 0)
@@ -205,7 +214,7 @@ const TripOverview = () => {
                                 <h1 className='text-3xl font-semibold text-white'>{trip.destination}</h1>
                                 <p className='mt-1 flex items-center gap-2 text-sm text-white/90'>
                                     <FaRegCalendar className='text-xs' />
-                                    {formattedStartDate} → {formattedEndDate}
+                                    {dateRangeLabel}
                                 </p>
                             </div>
 

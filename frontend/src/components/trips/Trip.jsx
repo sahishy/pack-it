@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { FaRegCalendar, FaChevronRight } from 'react-icons/fa6'
+import { FaRegCalendar, FaChevronRight, FaPlane } from 'react-icons/fa6'
 import Card from '../ui/Card'
 import { useTripItems } from '../../contexts/ItemsContext'
 import { getAirlineDisplayById } from '../../utils/airlineUtils'
@@ -15,9 +15,21 @@ const Trip = ({ trip }) => {
     const airline = getAirlineDisplayById(trip.airline)
     const formattedStartDate = formatDisplayDate(trip.startDate)
     const formattedEndDate = formatDisplayDate(trip.endDate)
+    const hasStartDate = Boolean(trip?.startDate)
+    const hasEndDate = Boolean(trip?.endDate)
+    const dateRangeLabel = hasStartDate && hasEndDate
+        ? `${formattedStartDate} → ${formattedEndDate}`
+        : hasStartDate
+            ? `Starts ${formattedStartDate}`
+            : hasEndDate
+                ? `Ends ${formattedEndDate}`
+                : 'To be determined'
     const { items } = useTripItems(trip.id)
     const { formatWeight } = useWeightFormatter()
     const tripDurationDays = getTripDurationDays(trip)
+    const durationLabel = hasStartDate && hasEndDate
+        ? `${tripDurationDays} ${tripDurationDays === 1 ? 'day' : 'days'}`
+        : 'TBD'
     const totalWeight = getTotalWeight(items)
     const maxWeight = Number(trip?.maxWeight ?? trip?.baggageLimit ?? 0)
     const isOverWeightLimit = totalWeight > maxWeight
@@ -44,7 +56,7 @@ const Trip = ({ trip }) => {
                         <h3 className='text-2xl font-semibold text-white'>{trip.destination}</h3>
                         <p className='flex items-center gap-2 text-sm text-white/90'>
                             <FaRegCalendar className='text-xs' />
-                            {formattedStartDate} → {formattedEndDate}
+                            {dateRangeLabel}
                         </p>
                     </div>
                 </div>
@@ -63,9 +75,14 @@ const Trip = ({ trip }) => {
 
                                 {airline.name}
                             </p>
-                        ) : <span />}
+                        ) : (
+                            <p className='flex items-center gap-2 text-neutral1'>
+                                <FaPlane className='text-neutral1' />
+                                No Airline
+                            </p>
+                        )}
                         <p className='px-3 py-1 bg-neutral4 text-neutral0 text-xs rounded-full'>
-                            {tripDurationDays} {tripDurationDays === 1 ? 'day' : 'days'}
+                            {durationLabel}
                         </p>
                     </div>
                     {shouldShowTotalWeight ? (
@@ -75,7 +92,14 @@ const Trip = ({ trip }) => {
                                 {formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(maxWeight, { decimals: 2 })}
                             </p>
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className='flex justify-between items-center'>
+                            <p className='flex gap-2 items-center text-neutral1'>
+                                <FaScaleBalanced className='text-neutral1' />
+                                No items added
+                            </p>
+                        </div>
+                    )}
 
                     <div className='mt-auto flex flex-col gap-2'>
                         <hr className='my-2 border-neutral3' />

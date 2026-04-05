@@ -95,10 +95,26 @@ itemsRouter.patch('/items/:itemId/metrics', async (req, res) => {
         return res.status(403).json({ message: 'Forbidden.' })
     }
 
+    const aiCallStartedAt = Date.now()
+    console.info('[AI][route] item-metrics.start', {
+        route: 'PATCH /items/:itemId/metrics',
+        uid,
+        tripId: item.tripId,
+        itemId,
+    })
+
     const metricsPrediction = await getPredictedItemMetrics({
         name: item.name,
         category: item.category,
         quantity: item.quantity,
+    })
+
+    console.info('[AI][route] item-metrics.success', {
+        route: 'PATCH /items/:itemId/metrics',
+        uid,
+        tripId: item.tripId,
+        itemId,
+        elapsedMs: Date.now() - aiCallStartedAt,
     })
 
     await itemRef.update({

@@ -16,6 +16,13 @@ const FLIGHT_CLASS_OPTIONS = [
     'First Class',
 ]
 
+const DEFAULT_LIMITS = {
+    Economy: 23,
+    'Premium Economy': 25,
+    Business: 32,
+    'First Class': 32,
+}
+
 const getTotalTripsCount = (trips) => {
     return trips.length;
 }
@@ -55,6 +62,7 @@ export {
     FALLBACK_TRIP_THUMBNAIL,
     TRIP_PURPOSE_OPTIONS,
     FLIGHT_CLASS_OPTIONS,
+    DEFAULT_LIMITS,
     getTotalTripsCount,
     getUpcomingTripsCount,
     getTripById,

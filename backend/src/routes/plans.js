@@ -158,6 +158,15 @@ plansRouter.post('/trips/:tripId/plan/strategy', async (req, res) => {
     const planId = await ensureTripPlan(uid, ownership.tripRef, tripId)
     const planRef = db.collection('plans').doc(planId)
 
+    const aiCallStartedAt = Date.now()
+    console.info('[AI][route] plan-strategy.start', {
+        route: 'POST /trips/:tripId/plan/strategy',
+        uid,
+        tripId,
+        itemsCount: Array.isArray(items) ? items.length : 0,
+        suitcasesCount: suitcases.length,
+    })
+
     await planRef.update({
         strategyStatus: 'planning',
         updatedAt: new Date(),
@@ -165,6 +174,16 @@ plansRouter.post('/trips/:tripId/plan/strategy', async (req, res) => {
 
     const semanticStrategy = await getStrategySemanticSteps({ items, suitcases })
     const normalizedSemanticStrategy = normalizeStrategy(semanticStrategy)
+
+    console.info('[AI][route] plan-strategy.success', {
+        route: 'POST /trips/:tripId/plan/strategy',
+        uid,
+        tripId,
+        itemsCount: Array.isArray(items) ? items.length : 0,
+        suitcasesCount: suitcases.length,
+        stageASource: semanticStrategy?.meta?.source ?? 'unknown',
+        elapsedMs: Date.now() - aiCallStartedAt,
+    })
 
     await planRef.update({
         strategy: normalizedSemanticStrategy,

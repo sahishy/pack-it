@@ -39,7 +39,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
 
                     <div className='flex gap-3 items-center'>
                         <span className='text-3xl' aria-hidden='true'>
-                            {getCategoryEmoji(item.category)}
+                            {/* {getCategoryEmoji(item.category)} */}
                         </span>
                         <div className='min-w-0'>
                             <h3 className={`text-sm font-semibold ${item.checked ? 'text-neutral1 line-through' : 'text-neutral0'}`}>
@@ -51,7 +51,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
                                 <p className='text-xs flex items-center gap-1 font-medium text-negative1'><FaXmark/> {weightFailureReason}</p>
                             ) : (
                                 <div className='flex flex-wrap items-center gap-2 text-xs text-neutral1'>
-                                    <p className='capitalize'>{item.category}</p>
+                                    {/* <p className='capitalize'>{item.category}</p> */}
                                     {item.quantity > 1 ? <p className='font-medium'>x{item.quantity}</p> : null}
                                     <p className='text-primary0 font-medium'>{formatWeight(resolvedWeightKg, { decimals: 2 })}</p>
                                     <p>{formatDimensions(resolvedDimensionsCm, { decimals: 1 })}</p>

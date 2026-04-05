@@ -1,9 +1,12 @@
 import { initializeApp, getApps, getApp } from 'firebase/app'
 import { getAI, GoogleAIBackend, getGenerativeModel, Schema } from 'firebase/ai'
+import OpenAI from 'openai'
+import { z } from 'zod'
+import { zodTextFormat } from 'openai/helpers/zod'
 import config from '../config.js'
 
 const ITEM_METRICS_PROMPT = `
-Estimate both item weight and packed dimensions from the provided input.
+Estimate shipping weight and packed dimensions for exactly one item from the provided input.
 
 Return JSON only:
 {
@@ -16,16 +19,35 @@ Return JSON only:
   "confidenceDimensions": number
 }
 
-Rules:
-- success=true only for a real, logical, non-living, packable item.
-- If the item is unknown but plausible, estimate from item type, use, material, and quantity.
-- Unknown but reasonable product names should still succeed.
-- Reject animals, people, impossible/fantasy objects, or non-packable concepts.
-- If success=false, use weightKg=-1, lengthCm=-1, widthCm=-1, heightCm=-1.
-- Return confidence values between 0 and 1 for both weight and dimensions.
-- Use kilograms and centimeters only.
-- For clothing and soft garments, dimensions should assume the item is laid out flat.
-- No extra keys. No explanation.
+Task:
+- Determine whether the input describes a real, logical, non-living, physically packable item.
+- Estimate the item's packed shipping weight and packed dimensions in kilograms and centimeters.
+- Packed dimensions means the smallest realistic rectangular box or parcel needed to ship the item.
+- For rigid items, use the item's bounding box.
+- For soft items, use a typical folded or compressed shipping shape.
+- For clothing, assume neatly folded for shipping, not worn, unless the input explicitly requests flat laid-out dimensions.
+- Always output dimensions sorted so lengthCm >= widthCm >= heightCm.
+
+Success rules:
+- success=true only if the item is real, physical, non-living, and there is enough information to make a reasonable estimate.
+- success=false for animals, people, food servings, liquids without container context, services, places, concepts, impossible/fantasy items, or ambiguous inputs that cannot be reliably estimated.
+- Do not pretend to know exact manufacturer specs unless the product identity is highly clear.
+
+Output rules:
+- If success=false, set:
+  - weightKg = -1
+  - confidenceWeight = 0
+  - lengthCm = -1
+  - widthCm = -1
+  - heightCm = -1
+  - confidenceDimensions = 0
+- Confidence values must be between 0 and 1.
+- Confidence must reflect identification certainty plus estimate certainty.
+- Use lower confidence for ambiguous names, uncertain materials, uncertain quantity, or unusual variants.
+- Do not use extra keys.
+- Do not include explanation.
+- Do not guess from brand name alone.
+- Be conservative: if unsure whether the estimate is reasonable, return success=false.
 `
 
 const SUITCASE_VISION_PROMPT = `
@@ -56,18 +78,6 @@ Rules:
 - No extra keys. No explanation.
 `
 
-const ITEM_METRICS_SCHEMA = Schema.object({
-    properties: {
-        success: Schema.boolean(),
-        weightKg: Schema.number(),
-        confidenceWeight: Schema.number(),
-        lengthCm: Schema.number(),
-        widthCm: Schema.number(),
-        heightCm: Schema.number(),
-        confidenceDimensions: Schema.number(),
-    },
-})
-
 const SUITCASE_VISION_SCHEMA = Schema.object({
     properties: {
         success: Schema.boolean(),
@@ -91,16 +101,107 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig)
 const ai = getAI(app, { backend: new GoogleAIBackend() })
-
-const itemModel = getGenerativeModel(ai, {
-    model: 'gemini-2.5-flash-lite',
+const openai = new OpenAI({
+    apiKey: config.openaiApiKey,
 })
+
 const visionModel = getGenerativeModel(ai, {
     model: 'gemini-2.5-flash-lite',
 })
-const strategyModel = getGenerativeModel(ai, {
-    model: 'gemini-2.5-flash-lite',
+
+const OPENAI_MODEL = 'gpt-5.4-nano'
+
+const getElapsedMs = (startMs) => Date.now() - startMs
+
+const logAiInfo = (event, metadata = {}) => {
+    console.info(`[AI] ${event}`, metadata)
+}
+
+const ITEM_METRICS_ZOD_SCHEMA = z.object({
+    success: z.boolean(),
+    weightKg: z.number(),
+    confidenceWeight: z.number(),
+    lengthCm: z.number(),
+    widthCm: z.number(),
+    heightCm: z.number(),
+    confidenceDimensions: z.number(),
 })
+
+const STRATEGY_STAGE_A_ZOD_SCHEMA = z.object({
+    steps: z.array(z.object({
+        index: z.number(),
+        itemId: z.string(),
+        suitcaseId: z.string(),
+        placementZone: z.string(),
+        description: z.string(),
+        packingAdjustment: z.enum(['none', 'folded', 'rolled']),
+        packingAdjustmentReason: z.string(),
+        itemDimensionsPacked: z.object({
+            lengthCm: z.number(),
+            widthCm: z.number(),
+            heightCm: z.number(),
+        }),
+    })),
+})
+
+const STRATEGY_STAGE_B_ZOD_SCHEMA = z.object({
+    placements: z.array(z.object({
+        itemId: z.string(),
+        suitcaseId: z.string(),
+        x0: z.number(),
+        x1: z.number(),
+        y0: z.number(),
+        y1: z.number(),
+    })),
+})
+
+const getOpenAIStructuredOutput = async ({ prompt = '', schema, schemaName }) => {
+    const startedAt = Date.now()
+    const input = [
+        {
+            role: 'user',
+            content: prompt,
+        },
+    ]
+
+    logAiInfo('openai.request.start', {
+        provider: 'openai',
+        model: OPENAI_MODEL,
+        schemaName,
+        input,
+    })
+
+    try {
+        const response = await openai.responses.parse({
+            model: OPENAI_MODEL,
+            input,
+            text: {
+                format: zodTextFormat(schema, schemaName),
+            },
+        })
+
+        const output = response?.output_parsed ?? null
+
+        logAiInfo('openai.request.success', {
+            provider: 'openai',
+            model: OPENAI_MODEL,
+            schemaName,
+            elapsedMs: getElapsedMs(startedAt),
+            output,
+        })
+
+        return output
+    } catch (error) {
+        console.error('[AI] openai.request.error', {
+            provider: 'openai',
+            model: OPENAI_MODEL,
+            schemaName,
+            elapsedMs: getElapsedMs(startedAt),
+            message: error?.message,
+        })
+        throw error
+    }
+}
 
 const clampConfidence = (value) => {
     const numericValue = Number(value)
@@ -306,31 +407,23 @@ const getPredictedItemMetrics = async ({ name = '', category = '', quantity = 1 
     const payload = {
         item: {
             name: String(name ?? '').trim(),
-            category: String(category ?? '').trim(),
+            // category: String(category ?? '').trim(),
             quantity: Number(quantity) || 1,
         },
     }
 
     const fullPrompt = `${ITEM_METRICS_PROMPT}\n\nInput:\n${JSON.stringify(payload)}`
-    const contents = [{
-        role: 'user',
-        parts: [{ text: fullPrompt }],
-    }]
 
     try {
-        const result = await itemModel.generateContent({
-            contents,
-            generationConfig: {
-                responseMimeType: 'application/json',
-                responseSchema: ITEM_METRICS_SCHEMA,
-            },
+        const parsed = await getOpenAIStructuredOutput({
+            prompt: fullPrompt,
+            schema: ITEM_METRICS_ZOD_SCHEMA,
+            schemaName: 'item_metrics_prediction',
         })
 
-        const rawText = result?.response?.text?.() ?? '{}'
-        const { parsed } = safeParseModelJson(rawText, 'item metrics response')
         return normalizeItemMetricsPrediction(parsed)
     } catch (error) {
-        console.error('Failed to predict item metrics with Gemini. Falling back to failed response.', error)
+        console.error('Failed to predict item metrics with OpenAI. Falling back to failed response.', error)
         return fallback
     }
 }
@@ -398,6 +491,14 @@ const getPredictedSuitcaseFromImage = async ({ imageBuffer = null, imageBase64 =
         }
     }
 
+    const startedAt = Date.now()
+
+    logAiInfo('gemini.vision.request.start', {
+        provider: 'gemini',
+        model: 'gemini-2.5-flash-lite',
+        mimeType,
+    })
+
     try {
         const requestPayload = {
             contents: [{
@@ -418,23 +519,27 @@ const getPredictedSuitcaseFromImage = async ({ imageBuffer = null, imageBase64 =
             },
         }
 
-        let result
-
-        try {
-            result = await visionModel.generateContent({
-                ...requestPayload,
-                // google search for suitcase vision
-                tools: [{ googleSearch: {} }],
-            })
-        } catch (searchError) {
-            console.warn('Suitcase vision grounding failed; retrying without Google Search.', searchError)
-            result = await visionModel.generateContent(requestPayload)
-        }
+        const result = await visionModel.generateContent(requestPayload)
 
         const rawText = result?.response?.text?.() ?? '{}'
         const { parsed } = safeParseModelJson(rawText, 'suitcase vision response')
+
+        logAiInfo('gemini.vision.request.success', {
+            provider: 'gemini',
+            model: 'gemini-2.5-flash-lite',
+            mimeType,
+            elapsedMs: getElapsedMs(startedAt),
+        })
+
         return normalizeSuitcaseVisionPrediction(parsed)
     } catch (error) {
+        console.error('[AI] gemini.vision.request.error', {
+            provider: 'gemini',
+            model: 'gemini-2.5-flash-lite',
+            mimeType,
+            elapsedMs: getElapsedMs(startedAt),
+            message: error?.message,
+        })
         console.error('Failed to analyze suitcase image with Gemini.', error)
         return {
             success: false,
@@ -715,12 +820,12 @@ const getStrategySemanticSteps = async ({ items = [], suitcases = [] }) => {
     }
 
     try {
-        const result = await strategyModel.generateContent({
-            contents: [{ role: 'user', parts: [{ text: `${STRATEGY_STAGE_A_PROMPT}\n\nInput:\n${JSON.stringify(payload)}` }] }],
+        const parsed = await getOpenAIStructuredOutput({
+            prompt: `${STRATEGY_STAGE_A_PROMPT}\n\nInput:\n${JSON.stringify(payload)}`,
+            schema: STRATEGY_STAGE_A_ZOD_SCHEMA,
+            schemaName: 'strategy_stage_a',
         })
 
-        const rawText = result?.response?.text?.() ?? '{}'
-        const { parsed } = safeParseModelJson(rawText, 'strategy stage A response')
         const generatedSteps = Array.isArray(parsed?.steps) ? parsed.steps : []
 
         if(!generatedSteps.length) {
@@ -933,12 +1038,12 @@ const getStrategyLayoutSteps = async ({ semanticSteps = [], suitcases = [] }) =>
     }
 
     try {
-        const result = await strategyModel.generateContent({
-            contents: [{ role: 'user', parts: [{ text: `${STRATEGY_STAGE_B_PROMPT}\n\nInput:\n${JSON.stringify(payload)}` }] }],
+        const parsed = await getOpenAIStructuredOutput({
+            prompt: `${STRATEGY_STAGE_B_PROMPT}\n\nInput:\n${JSON.stringify(payload)}`,
+            schema: STRATEGY_STAGE_B_ZOD_SCHEMA,
+            schemaName: 'strategy_stage_b',
         })
 
-        const rawText = result?.response?.text?.() ?? '{}'
-        const { parsed } = safeParseModelJson(rawText, 'strategy stage B response')
         const generated = Array.isArray(parsed?.placements) ? parsed.placements : []
 
         if(generated.length) {

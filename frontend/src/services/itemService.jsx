@@ -10,11 +10,9 @@ const createItem = async (_uid, tripId, itemData) => {
         return itemId
     }
 
-    try {
-        await apiPatch(`/api/items/${itemId}/metrics`)
-    } catch (error) {
+    void apiPatch(`/api/items/${itemId}/metrics`).catch((error) => {
         console.error('Failed to predict item metrics', error)
-    }
+    })
 
     return itemId
 }

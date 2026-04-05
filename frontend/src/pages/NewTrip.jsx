@@ -13,9 +13,9 @@ import { useTrips } from '../contexts/TripsContext'
 import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
 import { BsStars } from "react-icons/bs";
 import Return from '../components/ui/Return'
-import { FLIGHT_CLASS_OPTIONS, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
+import { DEFAULT_LIMITS, FLIGHT_CLASS_OPTIONS, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
 import useWeightFormatter from '../hooks/useWeightFormatter'
-import { convertWeightToKg } from '../utils/measurementUtils'
+import { convertWeightFromKg, convertWeightToKg } from '../utils/measurementUtils'
 
 const NewTrip = () => {
 
@@ -43,17 +43,11 @@ const NewTrip = () => {
 
     const requiredFields = [
         'destination',
-        'startDate',
-        'endDate',
-        'tripPurpose',
         'baggageLimit',
     ]
 
     const requiredFieldsForDisable = [
         'destination',
-        'startDate',
-        'endDate',
-        'tripPurpose',
     ]
 
     const hasMissingRequiredField = requiredFieldsForDisable.some((fieldName) => {
@@ -80,9 +74,17 @@ const NewTrip = () => {
 
         setError('')
 
-        const hasEmpty = requiredFields.some((fieldName) => !formData[fieldName])
+        const hasEmpty = requiredFields.some((fieldName) => {
+            const fieldValue = formData[fieldName]
+
+            if (typeof fieldValue === 'string') {
+                return !fieldValue.trim()
+            }
+
+            return !fieldValue
+        })
         if (hasEmpty) {
-            setError('Please fill in Destination, Start Date, End Date, Trip Purpose, and Baggage Limit.')
+            setError('Please fill in Destination and Baggage Limit.')
             return
         }
 
@@ -91,7 +93,7 @@ const NewTrip = () => {
             return
         }
 
-        if (formData.endDate < formData.startDate) {
+        if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
             setError('End date cannot be before start date.')
             return
         }
@@ -140,7 +142,7 @@ const NewTrip = () => {
 
                             <div className='flex gap-4 flex-col lg:flex-row'>
                                 <DateSelector
-                                    label={<><span>Start Date </span>{requiredAsterisk}</>}
+                                    label='Start Date'
                                     id='startDate'
                                     name='startDate'
                                     containerClassName='flex-1'
@@ -148,7 +150,7 @@ const NewTrip = () => {
                                     onChange={handleChange}
                                 />
                                 <DateSelector
-                                    label={<><span>End Date </span>{requiredAsterisk}</>}
+                                    label='End Date'
                                     id='endDate'
                                     name='endDate'
                                     containerClassName='flex-1'
@@ -159,7 +161,7 @@ const NewTrip = () => {
 
                             <div className='flex gap-4 flex-col lg:flex-row'>
                                 <Select
-                                    label={<><span>Trip Purpose </span>{requiredAsterisk}</>}
+                                    label='Trip Purpose'
                                     id='tripPurpose'
                                     containerClassName='flex-1'
                                     value={formData.tripPurpose}
@@ -213,7 +215,22 @@ const NewTrip = () => {
                                     id='flightClass'
                                     containerClassName='flex-1'
                                     value={formData.flightClass}
-                                    onChange={(flightClass) => setFormData((prev) => ({ ...prev, flightClass }))}
+                                    onChange={(flightClass) => {
+                                        setFormData((prev) => {
+                                            const defaultLimitKg = DEFAULT_LIMITS[flightClass]
+                                            const shouldApplyDefaultLimit = Number(prev.baggageLimit) === 1 && Number.isFinite(defaultLimitKg)
+
+                                            if (!shouldApplyDefaultLimit) {
+                                                return { ...prev, flightClass }
+                                            }
+
+                                            return {
+                                                ...prev,
+                                                flightClass,
+                                                baggageLimit: convertWeightFromKg(defaultLimitKg, measurementSystem),
+                                            }
+                                        })
+                                    }}
                                     options={FLIGHT_CLASS_OPTIONS}
                                     placeholder='Select flight class'
                                 />

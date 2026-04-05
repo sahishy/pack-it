@@ -10,7 +10,7 @@ const ITEM_CATEGORY_CONFIG = [
 ]
 
 const ITEM_CATEGORIES = ITEM_CATEGORY_CONFIG.map((category) => category.name)
-const ITEM_CONFIDENCE_WARNING_THRESHOLD = 0.7
+const ITEM_CONFIDENCE_WARNING_THRESHOLD = 0.4
 
 const normalizeCategory = (category) => category?.trim()?.toLowerCase()
 

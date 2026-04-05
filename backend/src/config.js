@@ -15,6 +15,7 @@ const config = {
     firebaseAppId: process.env.FIREBASE_APP_ID,
     firebaseClientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     firebasePrivateKey: process.env.FIREBASE_PRIVATE_KEY,
+    openaiApiKey: process.env.OPENAI_API_KEY
 }
 
 export default config
