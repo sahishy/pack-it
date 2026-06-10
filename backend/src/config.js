@@ -2,9 +2,13 @@ import dotenv from 'dotenv'
 
 dotenv.config({ path: '../.env' })
 
+const frontendOrigins = (process.env.FRONTEND_ORIGIN || '')
+    .split(',')
+    .filter(Boolean)
+
 const config = {
     port: Number(process.env.PORT),
-    frontendOrigin: process.env.FRONTEND_ORIGIN,
+    frontendOrigins,
     pexelsApiKey: process.env.PEXELS_API_KEY,
     firebaseProjectId: process.env.FIREBASE_PROJECT_ID,
     firebaseApiKey: process.env.FIREBASE_API_KEY,

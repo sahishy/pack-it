@@ -10,7 +10,7 @@ import suitcasesRouter from './routes/suitcases.js'
 
 const app = express()
 
-app.use(cors({ origin: config.frontendOrigin }))
+app.use(cors({ origin: config.frontendOrigins }))
 app.use(express.json({ limit: '35mb' }))
 
 app.get('/health', (_req, res) => {
@@ -31,7 +31,7 @@ app.use((error, _req, res, _next) => {
 app.listen(config.port, () => {
     console.log(`Backend server running with the following config:
         Port: ${config.port}
-        Frontend Origin: ${config.frontendOrigin}
+        Frontend Origins: ${config.frontendOrigins.join(', ')}
     `)
 })
 
