@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth, GoogleAuthProvider } from 'firebase/auth'
+import { getAuth, GoogleAuthProvider, initializeAuth, browserLocalPersistence } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { Capacitor } from '@capacitor/core'
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +14,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 
-export const auth = getAuth(app)
-export const db = getFirestore(app)
-export const googleProvider = new GoogleAuthProvider()
+const db = getFirestore(app)
+let auth = null
+let googleProvider = null
+
+if (Capacitor.isNativePlatform()) {
+    auth = initializeAuth(app, {
+        persistence: browserLocalPersistence,
+    })
+} else {
+    auth = getAuth(app)
+    googleProvider = new GoogleAuthProvider()
+}
+
+export { db, auth, googleProvider }

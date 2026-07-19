@@ -9,6 +9,7 @@ import Navbar from '../components/ui/Navbar'
 import { createNewUserObject, createUserProfile } from '../services/userService'
 import GoogleLogo from '../assets/google.png'
 import { FaSignInAlt } from 'react-icons/fa'
+import { Capacitor } from '@capacitor/core'
 
 const getNameFromUser = (user) => {
 	const fullName = user?.displayName?.trim() ?? ''
@@ -137,16 +138,19 @@ const Login = () => {
 	
 					{step === 'email' ? (
 						<form onSubmit={handleEmailContinue} className='flex flex-col gap-3'>
-							<Button
-								type='button'
-								variant='secondary'
-								onClick={handleGoogleContinue}
-								loading={loading}
-								className='w-full flex gap-3'
-							>
-								<img src={GoogleLogo} alt='Google logo' className='h-4 w-4' />
-								Continue with Google
-							</Button>
+							
+							{!Capacitor.isNativePlatform() && (
+								<Button
+									type='button'
+									variant='secondary'
+									onClick={handleGoogleContinue}
+									loading={loading}
+									className='w-full flex gap-3'
+								>
+									<img src={GoogleLogo} alt='Google logo' className='h-4 w-4' />
+									Continue with Google
+								</Button>
+							)}
 
 							<div className='flex items-center gap-3'>
 								<hr className='w-full border-neutral3'></hr>
