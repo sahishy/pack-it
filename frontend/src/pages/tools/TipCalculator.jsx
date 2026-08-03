@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { FaDollarSign, FaGlobe, FaUsers } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Slider from '../../components/ui/Slider'
-import Counter from '../../components/popover/Counter'
-import CommandPalette from '../../components/ui/CommandPalette'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import Slider from '@/components/common/LabeledSlider'
+import Counter from '@/components/common/Counter'
+import CommandPalette from '@/components/common/CommandPalette'
 import {
     calculateTipSummary,
     getDefaultTipPercent,

@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { FaCheck, FaDroplet, FaXmark } from 'react-icons/fa6'
 import { FiCheckCircle, FiXCircle } from 'react-icons/fi'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Select from '../../components/popover/Select'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import Select from '@/components/common/FormSelect'
 import {
     CARRY_ON_LIMIT_ML,
     getAllowanceStatus,

@@ -1,30 +1,27 @@
 import { useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { FaScaleBalanced, FaCircleCheck, FaHouse, FaRegCalendar } from 'react-icons/fa6'
-import { FiPackage, FiCheckCircle } from 'react-icons/fi'
-import Topbar from '../components/ui/Topbar'
-import Return from '../components/ui/Return'
-import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
-import LoadingScreen from '../components/ui/LoadingScreen'
-import ErrorScreen from '../components/ui/ErrorScreen'
+import { ArrowRight, Box, Check, CheckCircle2, Cuboid, Home, MapPin, Package, Scale } from 'lucide-react'
+import Return from '@/components/common/Return'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import LoadingScreen from '@/components/common/LoadingScreen'
+import ErrorScreen from '@/components/common/ErrorScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { useTrips } from '../contexts/TripsContext'
 import { useTripPlan } from '../contexts/PlansContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import { useSuitcases } from '../contexts/SuitcasesContext'
-import { getTripById, getTripDurationDays } from '../utils/tripUtils'
+import { getTripById } from '../utils/tripUtils'
 import { getCategoryEmoji, getResolvedItemWeightKg, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
-import { TbConfettiFilled } from 'react-icons/tb'
-import { HiOutlineLocationMarker } from 'react-icons/hi'
 import { setTripPackedStatus } from '../services/tripService'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 
 const StrategyOverview = () => {
-
     const { tripId } = useParams()
     const navigate = useNavigate()
-    const { user, profile, logout } = useAuth()
+    const { user } = useAuth()
     const { trips, loading: tripsLoading, error: tripsError } = useTrips()
     const { plan, loading: planLoading, error: planError } = useTripPlan(tripId)
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
@@ -39,69 +36,34 @@ const StrategyOverview = () => {
     const currentStep = steps[currentStepIndex] ?? null
     const currentItem = useMemo(() => items.find((item) => item.id === currentStep?.itemId) ?? null, [items, currentStep?.itemId])
     const currentSuitcase = useMemo(() => suitcases.find((suitcase) => suitcase.id === currentStep?.suitcaseId) ?? null, [suitcases, currentStep?.suitcaseId])
-    const currentOriginalDimensions = currentStep?.itemDimensionsOriginal ?? currentItem?.dimensions
-    const currentPackedDimensions = currentStep?.itemDimensionsPacked ?? currentOriginalDimensions
-    const hasPackingAdjustment = currentStep?.packingAdjustment && currentStep.packingAdjustment !== 'none'
-    const progressPercent = totalSteps > 0 ? Math.round(((currentStepIndex) / totalSteps) * 100) : 0
+    const originalDimensions = currentStep?.itemDimensionsOriginal ?? currentItem?.dimensions
+    const packedDimensions = currentStep?.itemDimensionsPacked ?? originalDimensions
+    const hasAdjustment = currentStep?.packingAdjustment && currentStep.packingAdjustment !== 'none'
+    const progressPercent = totalSteps > 0 ? Math.round(((currentStepIndex + 1) / totalSteps) * 100) : 0
     const isFinalStep = totalSteps > 0 && currentStepIndex === totalSteps - 1
-    const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
-    const tripDurationDays = getTripDurationDays(trip)
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
     const baggageLimit = Number(trip?.baggageLimit ?? trip?.maxWeight ?? 0)
     const groupedItems = useMemo(() => {
-        const grouped = items.reduce((accumulator, item) => {
+        const grouped = items.reduce((result, item) => {
             const category = item?.category || 'Other'
-            if (!accumulator[category]) {
-                accumulator[category] = []
-            }
-
-            accumulator[category].push(item)
-            return accumulator
+            result[category] = [...(result[category] ?? []), item]
+            return result
         }, {})
-
-        const configuredOrder = ITEM_CATEGORY_CONFIG.map((categoryConfig) => categoryConfig.name)
-        const orderedCategories = [
-            ...configuredOrder.filter((categoryName) => grouped[categoryName]),
-            ...Object.keys(grouped).filter((categoryName) => !configuredOrder.includes(categoryName)).sort(),
-        ]
-
-        return orderedCategories.map((categoryName) => ({
-            category: categoryName,
-            items: grouped[categoryName],
-        }))
+        const configured = ITEM_CATEGORY_CONFIG.map((category) => category.name)
+        const order = [...configured.filter((category) => grouped[category]), ...Object.keys(grouped).filter((category) => !configured.includes(category)).sort()]
+        return order.map((category) => ({ category, items: grouped[category] }))
     }, [items])
 
-    if (!user) {
-        return <Navigate to='/login' replace />
-    }
-
-    if (tripsLoading || planLoading || itemsLoading) {
-        return <LoadingScreen text='Loading strategy...' />
-    }
-
-    if (tripsError || planError || itemsError) {
-        return <ErrorScreen text={tripsError?.message ?? planError?.message ?? itemsError?.message ?? 'Failed to load strategy.'} />
-    }
-
-    if (!trip) {
-        return <ErrorScreen text='Trip not found.' />
-    }
+    if (!user) return <Navigate to='/login' replace />
+    if (tripsLoading || planLoading || itemsLoading) return <LoadingScreen text='Loading strategy...' />
+    if (tripsError || planError || itemsError) return <ErrorScreen text={tripsError?.message ?? planError?.message ?? itemsError?.message ?? 'Failed to load strategy.'} />
+    if (!trip) return <ErrorScreen text='Trip not found.' />
 
     if (totalSteps === 0) {
         return (
-            <main className='min-h-screen bg-neutral5'>
-                <Topbar displayName={displayName} email={user.email} onLogout={logout} />
-
-                <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10'>
-                    <Return link={`/trips/${tripId}/plan`} />
-                    <Card className='flex flex-col gap-4'>
-                        <h1 className='text-2xl font-semibold text-neutral0'>No strategy steps yet</h1>
-                        <p className='text-neutral1'>Generate your packing strategy from the plan page first.</p>
-                        <Button className='w-fit' onClick={() => navigate(`/trips/${tripId}/plan`)}>
-                            Back to Plan
-                        </Button>
-                    </Card>
-                </div>
+            <main className='mx-auto flex min-h-full w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
+                <Return link={`/trips/${tripId}/plan`} />
+                <Card><CardHeader><CardTitle>No strategy yet</CardTitle><CardDescription>Generate a packing strategy from the analysis page first.</CardDescription></CardHeader><CardContent><Button onClick={() => navigate(`/trips/${tripId}/plan`)}>Back to analysis</Button></CardContent></Card>
             </main>
         )
     }
@@ -112,173 +74,98 @@ const StrategyOverview = () => {
             setIsCompleted(true)
             return
         }
-
-        setCurrentStepIndex((prev) => Math.min(prev + 1, totalSteps - 1))
+        setCurrentStepIndex((previous) => Math.min(previous + 1, totalSteps - 1))
     }
 
     if (isCompleted) {
         return (
-            <main className='min-h-screen'>
-                <Topbar displayName={displayName} email={user.email} onLogout={logout} />
+            <main className='mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
+                <section className='rounded-2xl border bg-muted/30 p-8 text-center sm:p-12'>
+                    <div className='mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600'><CheckCircle2 /></div>
+                    <h1 className='text-3xl font-semibold tracking-tight'>Your trip is packed</h1>
+                    <p className='mt-2 text-muted-foreground'>{trip.destination} is ready to go.</p>
+                </section>
 
-                <div className='mx-auto flex w-full max-w-4xl flex-col gap-5 px-6 py-10'>
-                    <section className='flex flex-col items-center gap-3 text-center'>
-                        <div className='flex h-20 w-20 items-center justify-center rounded-full bg-positive1 text-neutral5'>
-                            <FiCheckCircle className='text-4xl' />
-                        </div>
-                        <div>
-                            <h1 className='text-3xl font-semibold text-neutral0'>All Set!</h1>
-                            <p className='text-neutral1'>Your {trip.destination} trip is ready</p>
-                        </div>
-                    </section>
+                <div className='grid gap-4 sm:grid-cols-3'>
+                    <SummaryMetric icon={<MapPin />} value={trip.destination} label='Destination' />
+                    <SummaryMetric icon={<Package />} value={items.length} label='Items packed' />
+                    <SummaryMetric icon={<Scale />} value={formatWeight(totalWeight, { decimals: 2 })} label={`of ${formatWeight(baggageLimit, { decimals: 2 })}`} />
+                </div>
 
-                    <Card className='grid grid-cols-1 gap-4 p-5 md:grid-cols-4'>
-                        <SummaryMetric icon={<HiOutlineLocationMarker className='text-3xl text-blue-500' />} value={trip.destination} label='Destination' />
-                        <SummaryMetric
-                            icon={<FaRegCalendar className='text-3xl text-violet-500' />}
-                            value={`${tripDurationDays} ${tripDurationDays === 1 ? 'day' : 'days'}`}
-                            label='Duration'
-                        />
-                        <SummaryMetric icon={<FiPackage className='text-3xl text-orange-500' />} value={items.length} label='Items' />
-                        <SummaryMetric icon={<FaScaleBalanced className='text-3xl text-positive1' />} value={formatWeight(totalWeight, { decimals: 2 })} label='Total Weight' />
-                    </Card>
-
-                    <Card className='border border-positive1/40 bg-positive1/10 p-5'>
-                        <div className='flex items-center gap-4'>
-                            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-positive1 text-neutral5'>
-                                <FiCheckCircle className='text-2xl' />
-                            </div>
-                            <div>
-                                <h2 className='text-xl font-semibold text-positive0'>
-                                    Perfect! Within baggage limit
-                                </h2>
-                                <p className='text-sm text-positive0/80'>
-                                    {formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(baggageLimit, { decimals: 2 })}
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
-
-                    <Card className='flex flex-col gap-5 p-5'>
-                        <h2 className='text-2xl font-semibold text-neutral0'>Final Packing List</h2>
-
+                <Card>
+                    <CardHeader><CardTitle>Final packing list</CardTitle><CardDescription>Everything included in this packing session.</CardDescription></CardHeader>
+                    <CardContent className='space-y-6'>
                         {groupedItems.map((group) => (
-                            <div key={group.category} className='flex flex-col gap-3'>
-                                <h3 className='text-lg font-semibold text-neutral0'>
-                                    {getCategoryEmoji(group.category)} {group.category}{' '}
-                                    <span className='text-sm font-normal text-neutral1'>({group.items.length} {group.items.length === 1 ? 'Item' : 'Items'})</span>
-                                </h3>
-
-                                <div className='flex flex-col gap-2'>
+                            <section key={group.category}>
+                                <h3 className='mb-2 text-sm font-medium'>{getCategoryEmoji(group.category)} {group.category} <span className='font-normal text-muted-foreground'>· {group.items.length}</span></h3>
+                                <div className='divide-y rounded-xl border'>
                                     {group.items.map((item) => (
-                                        <div
-                                            key={item.id}
-                                            className='flex items-center justify-between rounded-xl border border-neutral3 bg-neutral5 px-4 py-3'
-                                        >
-                                            <p className='flex items-center gap-3 text-base font-medium text-neutral0'>
-                                                <FaCircleCheck className='text-positive1' />
-                                                {item.name}
-                                            </p>
-                                            <p className='text-sm font-medium text-neutral1'>{formatWeight(getResolvedItemWeightKg(item.weight), { decimals: 2 })}</p>
+                                        <div key={item.id} className='flex items-center justify-between gap-4 px-4 py-3 text-sm'>
+                                            <span className='inline-flex items-center gap-2 font-medium'><Check className='size-4 text-emerald-600' />{item.name}</span>
+                                            <span className='text-muted-foreground'>{formatWeight(getResolvedItemWeightKg(item.weight), { decimals: 2 })}</span>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
+                            </section>
                         ))}
-                    </Card>
+                    </CardContent>
+                </Card>
 
-                    <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>
-                        <Button variant='secondary' className='w-full py-3' onClick={() => navigate(`/trips/${tripId}`)}>
-                            Edit Trip
-                        </Button>
-                        <Button className='flex w-full items-center gap-2 py-3' onClick={() => navigate('/home')}>
-                            <FaHouse /> Return Home
-                        </Button>
-                    </div>
+                <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
+                    <Button variant='outline' onClick={() => navigate(`/trips/${tripId}`)}>Back to trip</Button>
+                    <Button onClick={() => navigate('/home')}><Home className='size-4' /> Return home</Button>
                 </div>
             </main>
         )
     }
 
     return (
-        <main className='min-h-screen'>
-            <Topbar displayName={displayName} email={user.email} onLogout={logout} />
+        <main className='mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
+            <Return link={`/trips/${tripId}/plan`} />
+            <section>
+                <div className='mb-3 flex items-center justify-between text-sm'><span className='font-medium'>Step {currentStepIndex + 1} of {totalSteps}</span><span className='text-muted-foreground'>{progressPercent}% complete</span></div>
+                <Progress value={progressPercent} />
+            </section>
 
-            <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10'>
-                <Return link={`/trips/${tripId}/plan`} />
-
-                <section className='flex items-center justify-between'>
-                    <p className='text-base text-neutral0/80'>Step {currentStepIndex + 1} of {totalSteps}</p>
-                    <p className='text-base text-neutral0/80'>{progressPercent}% Complete</p>
-                </section>
-
-                <div className='h-3 w-full rounded-full bg-neutral3'>
-                    <div
-                        className='h-full rounded-full bg-linear-to-r from-primary0 to-primary1 transition-all'
-                        style={{ width: `${progressPercent}%` }}
-                    />
-                </div>
-
-                <Card className='flex min-h-80 flex-col items-center justify-center gap-5 text-center'>
-                    
-                    <div className='flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-r from-primary0 to-primary1'>
-                        <span className='text-2xl font-semibold text-white'>{currentStep.index}</span>
-                    </div>
-
-                    <p className='max-w-2xl text-lg text-neutral0/80'>{currentStep.description}</p>
-                    {/* {hasPackingAdjustment && currentStep?.packingAdjustmentReason ? (
-                        <p className='max-w-2xl text-sm text-neutral1'>{currentStep.packingAdjustmentReason}</p>
-                    ) : null} */}
-
-                    <div className='flex gap-3 w-full'>
-                        <div className='w-full rounded-xl border border-neutral3 bg-neutral4 p-3 text-left'>
-                            <p className='text-sm text-neutral1'>Currently packing</p>
-                            <p className='text-base font-semibold text-neutral0'>{currentItem?.name ?? 'Selected item'}</p>
-                            <p className='text-xs text-neutral1'>
-                                Item size: {formatDimensions(currentOriginalDimensions, { decimals: 1 })}
-                            </p>
-                            {hasPackingAdjustment ? (
-                                <p className='text-xs text-primary0'>
-                                    Packed ({currentStep?.packingAdjustment}): {formatDimensions(currentPackedDimensions, { decimals: 1 })}
-                                </p>
-                            ) : null}
+            <div className='grid flex-1 gap-6 lg:grid-cols-[1.45fr_0.75fr]'>
+                <Card className='min-h-[30rem] overflow-hidden p-0'>
+                    <CardHeader className='border-b'>
+                        <div className='flex items-center justify-between gap-3'><Badge variant='secondary'>Placement preview</Badge><Badge variant='outline'>Coming soon</Badge></div>
+                        <CardTitle className='mt-2'>Where this item goes</CardTitle>
+                        <CardDescription>{currentStep.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className='flex min-h-[24rem] items-center justify-center bg-muted/20 p-6'>
+                        <div className='flex h-full min-h-80 w-full flex-col items-center justify-center rounded-xl border border-dashed bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:28px_28px] text-center'>
+                            <div className='rounded-2xl border bg-background p-4 shadow-sm'><Cuboid className='size-8 text-muted-foreground' /></div>
+                            <p className='mt-4 font-medium'>2D / 3D packing visualization</p>
+                            <p className='mt-1 max-w-sm px-6 text-sm text-muted-foreground'>An interactive placement guide will show the item’s exact position and orientation here.</p>
                         </div>
-
-                        <div className='w-full rounded-xl border border-neutral3 bg-neutral4 p-3 text-left'>
-                            <p className='text-sm text-neutral1'>Target suitcase</p>
-                            <p className='text-base font-semibold text-neutral0'>{currentSuitcase?.name ?? 'Main Suitcase'}</p>
-                            <p className='text-xs text-neutral1'>
-                                Suitcase size: {formatDimensions(currentSuitcase?.dimensions, { decimals: 1 })}
-                            </p>
-                        </div>
-
-                    </div>
-
-                    <Button className='w-full flex gap-3' onClick={handleNext}>
-                        {isFinalStep ? (
-                            <>
-                                <TbConfettiFilled /> Finish & View Summary
-                            </>
-                        ) : (
-                            'Next Step'
-                        )}
-                    </Button>
+                    </CardContent>
                 </Card>
+
+                <div className='flex flex-col gap-4'>
+                    <Card>
+                        <CardHeader><CardDescription>Currently packing</CardDescription><CardTitle>{currentItem?.name ?? 'Selected item'}</CardTitle></CardHeader>
+                        <CardContent className='space-y-3 text-sm'>
+                            <DetailRow label='Item size' value={formatDimensions(originalDimensions, { decimals: 1 })} />
+                            {hasAdjustment ? <DetailRow label={`Packed ${currentStep.packingAdjustment}`} value={formatDimensions(packedDimensions, { decimals: 1 })} /> : null}
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardDescription>Target suitcase</CardDescription><CardTitle className='flex items-center gap-2'><Box className='size-4' />{currentSuitcase?.name ?? 'Main suitcase'}</CardTitle></CardHeader>
+                        <CardContent><DetailRow label='Suitcase size' value={formatDimensions(currentSuitcase?.dimensions, { decimals: 1 })} /></CardContent>
+                    </Card>
+                    <Button className='mt-auto w-full' size='lg' onClick={handleNext}>{isFinalStep ? 'Finish packing' : 'Next step'} <ArrowRight className='size-4' /></Button>
+                </div>
             </div>
         </main>
     )
 }
 
-const SummaryMetric = ({ icon, value, label }) => {
-    return (
-        <div className='flex flex-col gap-3 items-center rounded-xl border border-neutral3 p-4 shadow-md shadow-shadow lg:shadow-none lg:p-0 lg:border-none'>
-            <div>{icon}</div>
-            <div className='flex flex-col items-center'>
-                <p className='text-xl font-semibold text-neutral0'>{value}</p>
-                <p className='text-sm text-neutral1'>{label}</p>
-            </div>
-        </div>
-    )
-}
+const DetailRow = ({ label, value }) => <div className='flex items-start justify-between gap-4'><span className='text-muted-foreground'>{label}</span><span className='text-right font-medium'>{value}</span></div>
+
+const SummaryMetric = ({ icon, value, label }) => (
+    <Card><CardContent className='flex items-center gap-3 p-0'><span className='text-muted-foreground'>{icon}</span><div><p className='font-semibold'>{value}</p><p className='text-sm text-muted-foreground'>{label}</p></div></CardContent></Card>
+)
 
 export default StrategyOverview

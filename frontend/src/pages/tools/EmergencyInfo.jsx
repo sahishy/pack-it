@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { FaCircleCheck, FaCircleExclamation } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Button from '../../components/ui/Button'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
 import {
     getDefaultEmergencyInfo,
     getEmergencyInfo,

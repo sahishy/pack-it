@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '../lib/firebase'
-import Card from '../components/ui/Card'
-import Input from '../components/ui/Input'
-import Button from '../components/ui/Button'
-import Navbar from '../components/ui/Navbar'
+import { Card } from '@/components/ui/card'
+import FormInput from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import Navbar from '@/components/layout/Navbar'
 import { createNewUserObject, createUserProfile } from '../services/userService'
 import GoogleLogo from '../assets/google.png'
 import { FaSignInAlt } from 'react-icons/fa'
@@ -158,7 +158,7 @@ const Login = () => {
 								<hr className='w-full border-neutral3'></hr>
 							</div>
 
-							<Input
+							<FormInput
 								id='email'
 								name='email'
 								type='email'
@@ -175,7 +175,7 @@ const Login = () => {
 						</form>
 					) : (
 						<form onSubmit={handleSubmit} className='flex flex-col gap-2'>
-							<Input
+							<FormInput
 								label='Password'
 								id='password'
 								name='password'

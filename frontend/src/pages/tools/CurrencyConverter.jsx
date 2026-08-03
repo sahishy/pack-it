@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { FaArrowRightArrowLeft, FaCircleInfo, FaDollarSign } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Button from '../../components/ui/Button'
-import CommandPalette from '../../components/ui/CommandPalette'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import CommandPalette from '@/components/common/CommandPalette'
 import {
     convertCurrencyAmount,
     getCurrencies,

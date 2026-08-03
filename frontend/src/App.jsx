@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
 import Landing from './pages/Landing'
+import CapacitorLanding from './pages/capacitor/Landing'
 import Login from './pages/Login'
+import CapacitorLogin from './pages/capacitor/Login'
 import Signup from './pages/Signup'
+import CapacitorSignup from './pages/capacitor/Signup'
 import Home from './pages/Home'
 import Tools from './pages/Tools'
 import Settings from './pages/Settings'
@@ -18,11 +21,13 @@ import EditTrip from './pages/EditTrip'
 import TripOverview from './pages/TripOverview'
 import PlanOverview from './pages/PlanOverview'
 import StrategyOverview from './pages/StrategyOverview'
-import LoadingScreen from './components/ui/LoadingScreen'
-import Topbar from './components/ui/Topbar'
-import BottomBar from './components/ui/BottomBar'
+import LoadingScreen from '@/components/common/LoadingScreen'
+import AppShell from '@/components/layout/AppShell'
 import Suitcases from './pages/Suitcases'
 import NewSuitcase from './pages/NewSuitcase'
+import ProtectedRoute from './routes/ProtectedRoute'
+import PublicOnlyRoute from './routes/PublicOnlyRoute'
+import StartupRedirect from './routes/StartupRedirect'
 
 const resolveTheme = (preference) => {
 
@@ -33,55 +38,6 @@ const resolveTheme = (preference) => {
 	// return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 	return 'light';
 	
-}
-
-const ProtectedRoute = ({ children }) => {
-
-	const { user, loading } = useAuth()
-
-	if(loading) {
-		return <LoadingScreen className='bg-neutral4' />
-	}
-	if(!user) {
-		return <Navigate to='/login' replace />
-	}
-
-	return children
-
-}
-
-const PublicOnlyRoute = ({ children }) => {
-
-	const { user, loading } = useAuth()
-
-	if(loading) {
-		return <LoadingScreen className='bg-neutral4' />
-	}
-	if(user) {
-		return <Navigate to='/home' replace />
-	}
-
-	return children
-
-}
-
-const ProtectedTopbarLayout = () => {
-
-	const location = useLocation()
-	const { user, profile, logout } = useAuth()
-	const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user.email
-	const showBottomBar = location.pathname.startsWith('/home') || location.pathname.startsWith('/suitcases') || location.pathname.startsWith('/tools') || location.pathname.startsWith('/settings')
-
-	return (
-		<>
-			<Topbar displayName={displayName} email={user.email} onLogout={logout} />
-			<div className={showBottomBar ? 'pb-32 lg:pb-0' : ''}>
-				<Outlet />
-			</div>
-			{showBottomBar ? <BottomBar displayName={displayName} email={user.email} onLogout={logout}/> : null}
-		</>
-	)
-
 }
 
 const ScrollToTop = () => {
@@ -124,9 +80,23 @@ const App = () => {
 
 			<Route
 				path='/'
+				element={<StartupRedirect />}
+			/>
+
+			<Route
+				path='/landing'
 				element={
 					<PublicOnlyRoute>
 						<Landing />
+					</PublicOnlyRoute>
+				}
+			/>
+
+			<Route
+				path='/capacitor'
+				element={
+					<PublicOnlyRoute>
+						<CapacitorLanding />
 					</PublicOnlyRoute>
 				}
 			/>
@@ -141,6 +111,15 @@ const App = () => {
 			/>
 
 			<Route
+				path='/capacitor/login'
+				element={
+					<PublicOnlyRoute>
+						<CapacitorLogin />
+					</PublicOnlyRoute>
+				}
+			/>
+
+			<Route
 				path='/signup'
 				element={
 					<PublicOnlyRoute>
@@ -150,9 +129,18 @@ const App = () => {
 			/>
 
 			<Route
+				path='/capacitor/signup'
+				element={
+					<PublicOnlyRoute>
+						<CapacitorSignup />
+					</PublicOnlyRoute>
+				}
+			/>
+
+			<Route
 				element={
 					<ProtectedRoute>
-						<ProtectedTopbarLayout />
+						<AppShell />
 					</ProtectedRoute>
 				}
 			>
@@ -166,61 +154,13 @@ const App = () => {
 				<Route path='/tools/unit-converter' element={<UnitConverter />} />
 				<Route path='/tools/liquid-checker' element={<LiquidChecker />} />
 				<Route path='/tools/emergency-info' element={<EmergencyInfo />} />
+				<Route path='/suitcases/new' element={<NewSuitcase />} />
+				<Route path='/trips/new' element={<NewTrip />} />
+				<Route path='/trips/:tripId/edit' element={<EditTrip />} />
+				<Route path='/trips/:tripId' element={<TripOverview />} />
+				<Route path='/trips/:tripId/plan' element={<PlanOverview />} />
+				<Route path='/trips/:tripId/plan/strategy' element={<StrategyOverview />} />
 			</Route>
-
-			<Route
-				path='/suitcases/new'
-				element={
-					<ProtectedRoute>
-						<NewSuitcase />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/new'
-				element={
-					<ProtectedRoute>
-						<NewTrip />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/edit'
-				element={
-					<ProtectedRoute>
-						<EditTrip />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId'
-				element={
-					<ProtectedRoute>
-						<TripOverview />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/plan'
-				element={
-					<ProtectedRoute>
-						<PlanOverview />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/plan/strategy'
-				element={
-					<ProtectedRoute>
-						<StrategyOverview />
-					</ProtectedRoute>
-				}
-			/>
 			
 			<Route path='*' element={<Navigate to='/' replace />} />
 

@@ -1,13 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FaSuitcaseRolling } from 'react-icons/fa6'
 import { FiAlertTriangle, FiUploadCloud } from 'react-icons/fi'
-import Topbar from '../components/ui/Topbar'
-import Return from '../components/ui/Return'
-import Card from '../components/ui/Card'
-import Input from '../components/ui/Input'
-import Button from '../components/ui/Button'
-import { useAuth } from '../contexts/AuthContext'
+import { Luggage } from 'lucide-react'
+import FormInput from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useSuitcases } from '../contexts/SuitcasesContext'
 import { hasLowSuitcaseConfidence } from '../utils/suitcaseUtils'
 import useWeightFormatter from '../hooks/useWeightFormatter'
@@ -15,7 +12,6 @@ import { convertLengthFromCm, convertLengthToCm } from '../utils/measurementUtil
 
 const NewSuitcase = () => {
     const navigate = useNavigate()
-    const { user, profile, logout } = useAuth()
     const {
         addSuitcase,
         saving,
@@ -35,7 +31,6 @@ const NewSuitcase = () => {
     const [predictionConfidence, setPredictionConfidence] = useState(null)
     const { measurementSystem, lengthUnitLabel } = useWeightFormatter()
 
-    const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
     const isLowNameConfidence = hasLowSuitcaseConfidence(predictionConfidence?.confidenceName)
     const isLowDimensionsConfidence = hasLowSuitcaseConfidence(predictionConfidence?.confidenceDimensions)
 
@@ -142,27 +137,18 @@ const NewSuitcase = () => {
     }
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
-
-            <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10'>
-                <Return text='Back to suitcases' link='/suitcases' />
-
-                <Card>
-                    <div className='flex flex-col items-center gap-3'>
-                        <div className='rounded-full bg-linear-to-t from-primary0 to-primary1 p-4'>
-                            <FaSuitcaseRolling className='text-3xl text-white' />
-                        </div>
-
-                        <div>
-                            <h1 className='text-center text-3xl font-semibold text-neutral0'>Add new suitcase</h1>
-                            <p className='mt-1 text-center text-sm text-neutral1'>Use AI autofill from a photo or enter details manually.</p>
-                        </div>
-                    </div>
+        <main className='min-h-full'>
+            <Dialog open onOpenChange={(open) => { if (!open && !saving && !visionLoading) navigate('/suitcases') }}>
+                <DialogContent className='sm:max-w-xl'>
+                    <DialogHeader className='pr-8'>
+                        <div className='mb-2 flex size-10 items-center justify-center rounded-lg bg-muted'><Luggage className='size-5' /></div>
+                        <DialogTitle className='text-xl'>Add a suitcase</DialogTitle>
+                        <DialogDescription>Autofill from a photo or enter the suitcase dimensions manually.</DialogDescription>
+                    </DialogHeader>
 
                     <form className='mt-6 flex flex-col gap-4' onSubmit={handleSubmit}>
-                        <div className='flex justify-center my-6'>
-                            <label className='flex cursor-pointer items-center gap-2 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 text-sm text-neutral1 transition hover:bg-neutral4'>
+                        <div className='flex justify-center py-3'>
+                            <label className='flex cursor-pointer items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground shadow-xs transition hover:bg-accent'>
                                 <FiUploadCloud />
                                 {visionLoading ? 'Analyzing...' : 'Autofill from image'}
                                 <input
@@ -176,12 +162,12 @@ const NewSuitcase = () => {
                         </div>
                         
                         <div className='flex items-center gap-3'>
-                            <hr className='w-full border-neutral3'></hr>
-                            <p className='text-center text-sm text-neutral1 font-medium'>or</p>
-                            <hr className='w-full border-neutral3'></hr>
+                            <hr className='w-full border-border'></hr>
+                            <p className='text-center text-xs text-muted-foreground'>or enter manually</p>
+                            <hr className='w-full border-border'></hr>
                         </div>
 
-                        <Input
+                        <FormInput
                             label='Suitcase name'
                             id='suitcaseName'
                             value={formData.name}
@@ -190,7 +176,7 @@ const NewSuitcase = () => {
                         />
 
                         <div className='grid gap-3 sm:grid-cols-3'>
-                            <Input
+                            <FormInput
                                 label={`Length (${lengthUnitLabel})`}
                                 id='lengthCm'
                                 type='number'
@@ -199,7 +185,7 @@ const NewSuitcase = () => {
                                 value={getDisplayLength(formData.lengthCm)}
                                 onChange={(event) => updateLengthFromDisplay('lengthCm', event.target.value)}
                             />
-                            <Input
+                            <FormInput
                                 label={`Width (${lengthUnitLabel})`}
                                 id='widthCm'
                                 type='number'
@@ -208,7 +194,7 @@ const NewSuitcase = () => {
                                 value={getDisplayLength(formData.widthCm)}
                                 onChange={(event) => updateLengthFromDisplay('widthCm', event.target.value)}
                             />
-                            <Input
+                            <FormInput
                                 label={`Height (${lengthUnitLabel})`}
                                 id='heightCm'
                                 type='number'
@@ -220,22 +206,22 @@ const NewSuitcase = () => {
                         </div>
 
                         {(isLowNameConfidence || isLowDimensionsConfidence) ? (
-                            <p className='inline-flex items-center gap-2 text-sm text-warning1'>
+                            <p className='inline-flex items-center gap-2 text-sm text-amber-600'>
                                 <FiAlertTriangle />
                                 AI confidence is low for {isLowNameConfidence ? 'name' : ''}{isLowNameConfidence && isLowDimensionsConfidence ? ' and ' : ''}{isLowDimensionsConfidence ? 'dimensions' : ''}. Please verify before saving.
                             </p>
                         ) : null}
 
-                        {formError ? <p className='text-sm text-negative1'>{formError}</p> : null}
-                        {visionError ? <p className='text-sm text-negative1'>{visionError.message}</p> : null}
-                        {saveError ? <p className='text-sm text-negative1'>{saveError.message}</p> : null}
+                        {formError ? <p className='text-sm text-destructive'>{formError}</p> : null}
+                        {visionError ? <p className='text-sm text-destructive'>{visionError.message}</p> : null}
+                        {saveError ? <p className='text-sm text-destructive'>{saveError.message}</p> : null}
 
                         <Button type='submit' loading={saving} disabled={saving || visionLoading} className='mt-3'>
                             Save suitcase
                         </Button>
                     </form>
-                </Card>
-            </div>
+                </DialogContent>
+            </Dialog>
         </main>
     )
 }

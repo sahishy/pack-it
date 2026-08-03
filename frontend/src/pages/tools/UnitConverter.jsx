@@ -5,12 +5,12 @@ import {
     FaScaleBalanced,
     FaTemperatureHigh,
 } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Button from '../../components/ui/Button'
-import Select from '../../components/popover/Select'
-import TabSelector from '../../components/ui/TabSelector'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import Select from '@/components/common/FormSelect'
+import TabSelector from '@/components/common/TabSelector'
 import {
     convertUnits,
     getDefaultUnitsForCategory,

@@ -1,273 +1,135 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Card from '../components/ui/Card'
-import Input from '../components/ui/Input'
-import DateSelector from '../components/ui/DateSelector'
-import Button from '../components/ui/Button'
-import Select from '../components/popover/Select'
-import Counter from '../components/popover/Counter'
-import CommandPalette from '../components/ui/CommandPalette'
-import Topbar from '../components/ui/Topbar'
-import { useAuth } from '../contexts/AuthContext'
+import { CalendarDays, Check, Plane, Sparkles } from 'lucide-react'
+import FormInput from '@/components/common/FormInput'
+import DateRangeSelector from '@/components/common/DateRangeSelector'
+import Select from '@/components/common/FormSelect'
+import Counter from '@/components/common/Counter'
+import CommandPalette from '@/components/common/CommandPalette'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
 import { useTrips } from '../contexts/TripsContext'
 import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
-import { BsStars } from "react-icons/bs";
-import Return from '../components/ui/Return'
 import { DEFAULT_LIMITS, FLIGHT_CLASS_OPTIONS, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 import { convertWeightFromKg, convertWeightToKg } from '../utils/measurementUtils'
 
+const steps = [
+    { title: 'Where and when?', description: 'Start with the essentials for your itinerary.', icon: CalendarDays },
+    { title: 'What kind of trip?', description: 'This helps tailor future packing suggestions.', icon: Sparkles },
+    { title: 'Flight details', description: 'Optional details make weight guidance more accurate.', icon: Plane },
+]
+
 const NewTrip = () => {
-
     const navigate = useNavigate()
-    const { user, profile, logout } = useAuth()
     const { addTrip, creating, createError } = useTrips()
-
-    const [formData, setFormData] = useState({
-        destination: '',
-        startDate: '',
-        endDate: '',
-        tripPurpose: '',
-        airline: '',
-        flightClass: '',
-        baggageLimit: 1,
-    })
+    const [step, setStep] = useState(0)
+    const [formData, setFormData] = useState({ destination: '', startDate: '', endDate: '', tripPurpose: '', airline: '', flightClass: '', baggageLimit: 1 })
     const [error, setError] = useState('')
     const [isAirlinePaletteOpen, setIsAirlinePaletteOpen] = useState(false)
     const [airlineQuery, setAirlineQuery] = useState('')
     const { weightUnitLabel, measurementSystem } = useWeightFormatter()
-
-    const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
     const selectedAirline = useMemo(() => getAirlineDisplayById(formData.airline), [formData.airline])
     const filteredAirlines = useMemo(() => searchAirlines(airlineQuery).slice(0, 200), [airlineQuery])
+    const StepIcon = steps[step].icon
 
-    const requiredFields = [
-        'destination',
-        'baggageLimit',
-    ]
-
-    const requiredFieldsForDisable = [
-        'destination',
-    ]
-
-    const hasMissingRequiredField = requiredFieldsForDisable.some((fieldName) => {
-        const fieldValue = formData[fieldName]
-
-        if (typeof fieldValue === 'string') {
-            return !fieldValue.trim()
-        }
-
-        return !fieldValue
-    })
-
-    const handleChange = (event) => {
-        const { name, value } = event.target
-        setFormData((prev) => ({ ...prev, [name]: value }))
-    }
-
-    const handleSubmit = async (event) => {
-
-        event.preventDefault()
-        if (creating) {
-            return
-        }
-
+    const handleNext = () => {
         setError('')
-
-        const hasEmpty = requiredFields.some((fieldName) => {
-            const fieldValue = formData[fieldName]
-
-            if (typeof fieldValue === 'string') {
-                return !fieldValue.trim()
-            }
-
-            return !fieldValue
-        })
-        if (hasEmpty) {
-            setError('Please fill in Destination and Baggage Limit.')
+        if (step === 0 && !formData.destination.trim()) {
+            setError('Add a destination to continue.')
             return
         }
-
-        if (Number(formData.baggageLimit) <= 0) {
+        if (step === 0 && formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
+            setError('The end date cannot be before the start date.')
+            return
+        }
+        if (step === 1 && Number(formData.baggageLimit) <= 0) {
             setError('Baggage limit must be greater than 0.')
             return
         }
-
-        if (formData.startDate && formData.endDate && formData.endDate < formData.startDate) {
-            setError('End date cannot be before start date.')
-            return
-        }
-
-        try {
-            await addTrip({
-                ...formData,
-                baggageLimit: convertWeightToKg(formData.baggageLimit, measurementSystem),
-            })
-            navigate('/home')
-        } catch {
-            setError('Unable to create trip right now. Please try again.')
-        }
-
+        setStep((current) => Math.min(current + 1, steps.length - 1))
     }
 
-    const requiredAsterisk = <span className='text-negative1'>*</span>
+    const handleSubmit = async (event) => {
+        event.preventDefault()
+        if (step < steps.length - 1) {
+            handleNext()
+            return
+        }
+        if (creating) return
+        try {
+            setError('')
+            await addTrip({ ...formData, baggageLimit: convertWeightToKg(formData.baggageLimit, measurementSystem) })
+            navigate('/home')
+        } catch {
+            setError('Unable to create this trip right now. Please try again.')
+        }
+    }
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
+        <main className='min-h-full'>
+            <Dialog open onOpenChange={(open) => { if (!open && !creating) navigate('/home') }}>
+                <DialogContent className='sm:max-w-xl'>
+                    <DialogHeader className='pr-8'>
+                        <div className='mb-2 flex size-10 items-center justify-center rounded-lg bg-muted'><StepIcon className='size-5' /></div>
+                        <DialogTitle className='text-xl'>{steps[step].title}</DialogTitle>
+                        <DialogDescription>{steps[step].description}</DialogDescription>
+                    </DialogHeader>
 
-            <div className='flex flex-col gap-6 mx-auto w-full max-w-3xl px-4 py-10'>
-                <Return />
-                <Card>
-
-                    <div className='flex flex-col gap-3 items-center'>
-                        <div className='justify-self-center p-4 bg-linear-to-t from-primary0 to-primary1 rounded-full'>
-                            <BsStars className='text-white text-3xl' />
-                        </div>
-                        <div>
-                            <h1 className='text-3xl font-semibold text-neutral0 text-center'>Create a new trip</h1>
-                            <p className='mt-1 text-sm text-neutral1 text-center'>Add your trip details to start planning what to pack.</p>
-                        </div>
+                    <div className='space-y-2'>
+                        <div className='flex items-center justify-between text-xs text-muted-foreground'><span>Step {step + 1} of {steps.length}</span><span>{Math.round(((step + 1) / steps.length) * 100)}%</span></div>
+                        <Progress value={((step + 1) / steps.length) * 100} />
                     </div>
 
-                    <form onSubmit={handleSubmit} className='mt-6' aria-busy={creating}>
-                        <fieldset disabled={creating} className='grid gap-4'>
-                            <Input
-                                label={<><span>Destination </span>{requiredAsterisk}</>}
-                                name='destination'
-                                placeholder='e.g. Paris, France'
-                                value={formData.destination}
-                                onChange={handleChange}
-                            />
+                    <form id='new-trip-form' onSubmit={handleSubmit} className='min-h-52 space-y-4 py-2' aria-busy={creating}>
+                        <fieldset disabled={creating} className='space-y-4'>
+                            {step === 0 ? (
+                                <>
+                                    <FormInput label='Destination' name='destination' placeholder='e.g. Lisbon, Portugal' value={formData.destination} onChange={(event) => setFormData((previous) => ({ ...previous, destination: event.target.value }))} />
+                                    <DateRangeSelector label='Trip dates' id='tripDates' startDate={formData.startDate} endDate={formData.endDate} onChange={({ startDate, endDate }) => setFormData((previous) => ({ ...previous, startDate, endDate }))} />
+                                </>
+                            ) : null}
 
-                            <div className='flex gap-4 flex-col lg:flex-row'>
-                                <DateSelector
-                                    label='Start Date'
-                                    id='startDate'
-                                    name='startDate'
-                                    containerClassName='flex-1'
-                                    value={formData.startDate}
-                                    onChange={handleChange}
-                                />
-                                <DateSelector
-                                    label='End Date'
-                                    id='endDate'
-                                    name='endDate'
-                                    containerClassName='flex-1'
-                                    value={formData.endDate}
-                                    onChange={handleChange}
-                                />
-                            </div>
+                            {step === 1 ? (
+                                <>
+                                    <Select label='Trip purpose' id='tripPurpose' value={formData.tripPurpose} onChange={(tripPurpose) => setFormData((previous) => ({ ...previous, tripPurpose }))} options={TRIP_PURPOSE_OPTIONS} placeholder='Select a purpose' />
+                                    <Counter label={`Baggage limit (${weightUnitLabel})`} id='baggageLimit' value={formData.baggageLimit} onChange={(baggageLimit) => setFormData((previous) => ({ ...previous, baggageLimit }))} min={1} allowDecimal step={0.01} />
+                                </>
+                            ) : null}
 
-                            <div className='flex gap-4 flex-col lg:flex-row'>
-                                <Select
-                                    label='Trip Purpose'
-                                    id='tripPurpose'
-                                    containerClassName='flex-1'
-                                    value={formData.tripPurpose}
-                                    onChange={(tripPurpose) => setFormData((prev) => ({ ...prev, tripPurpose }))}
-                                    options={TRIP_PURPOSE_OPTIONS}
-                                    placeholder='Select trip purpose'
-                                />
-                                <Counter
-                                    label={<><span>Baggage Limit ({weightUnitLabel}) </span>{requiredAsterisk}</>}
-                                    id='baggageLimit'
-                                    value={formData.baggageLimit}
-                                    containerClassName='flex-1'
-                                    onChange={(baggageLimit) => setFormData((prev) => ({ ...prev, baggageLimit }))}
-                                    min={1}
-                                    allowDecimal
-                                    step={0.01}
-                                />
-                            </div>
-
-                            <div className='flex gap-4 flex-col lg:flex-row'>
-                                <div className='flex-1'>
-                                    <label htmlFor='airline' className='text-sm font-medium text-neutral0'>
-                                        Airline
-                                    </label>
-
-                                    <button
-                                        id='airline'
-                                        type='button'
-                                        onClick={() => {
-                                            setAirlineQuery(selectedAirline?.name ?? '')
-                                            setIsAirlinePaletteOpen(true)
-                                        }}
-                                        className='mt-1 flex w-full cursor-pointer items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 min-h-10.5 text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
-                                    >
-                                        {selectedAirline?.logo ? (
-                                            <img
-                                                src={selectedAirline.logo}
-                                                alt={`${selectedAirline.name} logo`}
-                                                className='h-6 w-6 rounded object-cover'
-                                            />
-                                        ) : null}
-
-                                        <span className={selectedAirline?.name ? 'text-neutral0' : 'text-neutral1'}>
-                                            {selectedAirline?.name || 'Select an airline'}
-                                        </span>
-                                    </button>
-                                </div>
-
-                                <Select
-                                    label='Flight Class'
-                                    id='flightClass'
-                                    containerClassName='flex-1'
-                                    value={formData.flightClass}
-                                    onChange={(flightClass) => {
-                                        setFormData((prev) => {
-                                            const defaultLimitKg = DEFAULT_LIMITS[flightClass]
-                                            const shouldApplyDefaultLimit = Number(prev.baggageLimit) === 1 && Number.isFinite(defaultLimitKg)
-
-                                            if (!shouldApplyDefaultLimit) {
-                                                return { ...prev, flightClass }
-                                            }
-
-                                            return {
-                                                ...prev,
-                                                flightClass,
-                                                baggageLimit: convertWeightFromKg(defaultLimitKg, measurementSystem),
-                                            }
-                                        })
-                                    }}
-                                    options={FLIGHT_CLASS_OPTIONS}
-                                    placeholder='Select flight class'
-                                />
-                            </div>
-
-                            {error ? <p className='text-sm text-negative1'>{error}</p> : null}
-                            {createError ? <p className='text-sm text-negative1'>{createError.message}</p> : null}
-                            {creating ? <p className='text-sm text-neutral1'>Creating your trip...</p> : null}
-
-                            <Button type='submit' loading={creating} disabled={hasMissingRequiredField} className='flex gap-2 mt-3'>
-                                <BsStars />
-                                Create Trip
-                            </Button>
+                            {step === 2 ? (
+                                <>
+                                    <div>
+                                        <label htmlFor='airline' className='text-sm font-medium'>Airline</label>
+                                        <button id='airline' type='button' onClick={() => { setAirlineQuery(selectedAirline?.name ?? ''); setIsAirlinePaletteOpen(true) }} className='mt-1 flex min-h-10 w-full items-center gap-3 rounded-lg border bg-background px-3 py-2 text-left text-sm shadow-xs transition hover:bg-accent'>
+                                            {selectedAirline?.logo ? <img src={selectedAirline.logo} alt='' className='size-6 rounded object-cover' /> : <Plane className='size-4 text-muted-foreground' />}
+                                            <span className={selectedAirline?.name ? '' : 'text-muted-foreground'}>{selectedAirline?.name || 'Select an airline'}</span>
+                                        </button>
+                                    </div>
+                                    <Select label='Flight class' id='flightClass' value={formData.flightClass} onChange={(flightClass) => setFormData((previous) => {
+                                        const defaultLimitKg = DEFAULT_LIMITS[flightClass]
+                                        const baggageLimit = Number(previous.baggageLimit) === 1 && Number.isFinite(defaultLimitKg) ? convertWeightFromKg(defaultLimitKg, measurementSystem) : previous.baggageLimit
+                                        return { ...previous, flightClass, baggageLimit }
+                                    })} options={FLIGHT_CLASS_OPTIONS} placeholder='Select a flight class' />
+                                </>
+                            ) : null}
                         </fieldset>
 
+                        {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+                        {createError ? <p className='text-sm text-destructive'>{createError.message}</p> : null}
                     </form>
 
-                    <CommandPalette
-                        open={isAirlinePaletteOpen}
-                        onClose={() => setIsAirlinePaletteOpen(false)}
-                        query={airlineQuery}
-                        onQueryChange={setAirlineQuery}
-                        items={filteredAirlines}
-                        title='Select airline'
-                        placeholder='Search airlines by name'
-                        emptyMessage='No airlines found.'
-                        onSelect={(airline) => {
-                            setFormData((prev) => ({ ...prev, airline: airline.id }))
-                            setIsAirlinePaletteOpen(false)
-                            setAirlineQuery('')
-                        }}
-                    />
-                </Card>
-            </div>
+                    <DialogFooter>
+                        {step > 0 ? <Button type='button' variant='outline' disabled={creating} onClick={() => { setError(''); setStep((current) => current - 1) }}>Back</Button> : null}
+                        <Button type='submit' form='new-trip-form' loading={creating}>{step === steps.length - 1 ? <><Check className='size-4' /> Create trip</> : <>Continue</>}</Button>
+                    </DialogFooter>
+
+                    <CommandPalette open={isAirlinePaletteOpen} onClose={() => setIsAirlinePaletteOpen(false)} query={airlineQuery} onQueryChange={setAirlineQuery} items={filteredAirlines} title='Select airline' placeholder='Search airlines by name' emptyMessage='No airlines found.' onSelect={(airline) => { setFormData((previous) => ({ ...previous, airline: airline.id })); setIsAirlinePaletteOpen(false); setAirlineQuery('') }} />
+                </DialogContent>
+            </Dialog>
         </main>
     )
-
 }
 
 export default NewTrip

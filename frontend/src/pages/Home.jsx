@@ -1,133 +1,142 @@
-import { useNavigate } from 'react-router-dom'
-import { FaArrowTrendUp, FaPlane, FaPlaneDeparture, FaPlus, FaSuitcase, FaSuitcaseRolling } from 'react-icons/fa6'
-import { useTrips } from '../contexts/TripsContext'
-import Trip from '../components/trips/Trip'
-import TripGhost from '../components/ghost/TripGhost'
-import { getTotalTripsCount, getUpcomingTripsCount } from '../utils/tripUtils'
-import Button from '../components/ui/Button'
-import ErrorScreen from '../components/ui/ErrorScreen'
-import { PiHandWavingFill } from 'react-icons/pi'
+import { Link, useNavigate } from 'react-router-dom'
+import { Check, Luggage, Plus, Route } from 'lucide-react'
+import { BiSolidPlaneAlt } from "react-icons/bi";
+import { useTrips } from '@/contexts/TripsContext'
+import Trip from '@/components/trips/Trip'
+import TripCardDetails from '@/components/trips/TripCardDetails'
+import TripGhost from '@/components/ghost/TripGhost'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import ErrorScreen from '@/components/common/ErrorScreen'
+import Cloud from '@/assets/images/cloud.png'
+import logo_sm_white from '@/assets/logo_sm_white.png'
+import { FALLBACK_TRIP_THUMBNAIL } from '@/utils/tripUtils'
 
-const Home = () => {
+const getCreatedAtMs = (trip) => {
+    const createdAt = trip?.createdAt
+    if (!createdAt) return 0
+    if (typeof createdAt?.toMillis === 'function') return createdAt.toMillis()
+    if (createdAt instanceof Date) return createdAt.getTime()
+    const parsed = new Date(createdAt).getTime()
+    return Number.isNaN(parsed) ? 0 : parsed
+}
 
-    const { trips, loading: tripsLoading, error: tripsError } = useTrips()
+const getDaysUntilStart = (startDate) => {
+    if (!startDate) return null
 
-    const totalTrips = getTotalTripsCount(trips);
-    const upcomingTrips = getUpcomingTripsCount(trips);
+    const [year, month, day] = startDate.split('-').map(Number)
+    if (!year || !month || !day) return null
 
-    const sortedTrips = [...trips].sort((a, b) => {
-        const getCreatedAtMs = (trip) => {
-            const createdAt = trip?.createdAt
+    const today = new Date()
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+    const startUtc = Date.UTC(year, month - 1, day)
+    const daysUntilStart = Math.round((startUtc - todayUtc) / 86_400_000)
 
-            if (!createdAt) {
-                return 0
-            }
+    return daysUntilStart >= 0 ? daysUntilStart : null
+}
 
-            if (typeof createdAt?.toMillis === 'function') {
-                return createdAt.toMillis()
-            }
-
-            if (createdAt instanceof Date) {
-                return createdAt.getTime()
-            }
-
-            const parsed = new Date(createdAt).getTime()
-            return Number.isNaN(parsed) ? 0 : parsed
-        }
-
-        return getCreatedAtMs(b) - getCreatedAtMs(a)
-    })
-
-    if (tripsError) {
-        return <ErrorScreen text={tripsError.message ?? 'Failed to load trips.'} className='bg-neutral4' />
-    }
+const FeaturedTrip = ({ trip }) => {
+    const daysUntilStart = getDaysUntilStart(trip.startDate)
+    const countdownLabel = daysUntilStart === null
+        ? null
+        : daysUntilStart === 0
+            ? 'Today'
+            : `${daysUntilStart} ${daysUntilStart === 1 ? 'day' : 'days'}`
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
-                <div className='m-6 flex max-w-4xl flex-col gap-6 px-6 py-10 rounded-xl bg-linear-to-r from-primary0 to-primary1 lg:m-auto lg:bg-none'>
-                    <div className='flex flex-col gap-2 text-center items-center lg:text-left lg:items-start'>
-                        <h2 className='flex gap-2 items-center text-sm text-white/80'><PiHandWavingFill className='text-lg' /> Ready for adventure?</h2>
-                        <h1 className='text-4xl lg:text-5xl font-bold text-white'>Welcome to Pack-It</h1>
-                        <p className='text-white/80'>Your intelligent travel packing assistant</p>
+        <Card className='group grid gap-2! overflow-hidden p-2! transition-shadow hover:shadow-[0_12px_30px_rgba(31,41,55,0.06)] md:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)]'>
+                <div className='relative aspect-[16/9] overflow-hidden rounded-xl bg-muted md:aspect-auto md:min-h-64'>
+                    <img src={trip.thumbnailUrl || FALLBACK_TRIP_THUMBNAIL} alt={`${trip.destination} thumbnail`} className='size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]' />
+                    {countdownLabel && <Badge className='absolute right-3 top-3 border-0 bg-neutral1/20 text-white shadow-sm backdrop-blur-xl'><BiSolidPlaneAlt className='text-white' />{countdownLabel}</Badge>}
+                </div>
+                <div className='flex min-w-0 flex-col p-6 sm:p-7'>
+                    <div className='flex items-start justify-between gap-4'>
+                        <div className='min-w-0'>
+                            <h2 className='truncate text-2xl font-semibold tracking-tight'>{trip.destination}</h2>
+                        </div>
+                        <Badge variant='secondary' className={trip.packed ? 'border-0 bg-emerald-500/15 text-emerald-700' : 'border-0'}>{trip.packed ? <Check /> : <Luggage />}{trip.packed ? 'Packed' : 'Planning'}</Badge>
                     </div>
+                    <TripCardDetails trip={trip} className='mt-4' />
 
-                    <div className='flex flex-col flex-nowrap gap-4 items-center justify-center lg:justify-start lg:flex-row lg:items-start lg:gap-6'>
-                        <div className='flex items-center gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-white/20 items-center justify-center'>
-                                <FaSuitcaseRolling className='text-xl text-white' />
-                            </div>
-                            <div>
-                                <p className='text-xl font-bold text-white'>{totalTrips}</p>
-                                <p className='text-sm text-white/80'>Total Trip{totalTrips !== 1 ? 's' : ''}</p>
-                            </div>
-                        </div>
+                    <div className='mt-auto pt-8'>
+                        <Button className='mt-5 w-full' render={<Link to={`/trips/${trip.id}`} />}>Continue</Button>
+                    </div>
+                </div>
+        </Card>
+    )
+}
 
-                        <div className='flex items-center gap-3'>
-                            <div className='flex h-10 w-10 shrink-0 rounded-full bg-white/20 items-center justify-center'>
-                                <FaArrowTrendUp className='text-xl text-white' />
-                            </div>
-                            <div>
-                                <p className='text-xl font-bold text-white'>{upcomingTrips}</p>
-                                <p className='text-sm text-white/80'>Upcoming Trip{upcomingTrips !== 1 ? 's' : ''}</p>
-                            </div>
-                        </div>
+const EmptyFeaturedTrip = ({ onCreate }) => (
+    <div className='flex min-h-64 w-full max-w-xl flex-col items-center justify-center rounded-2xl border border-dashed border-white/80 bg-background/70 px-6 text-center shadow-[0_16px_36px_rgba(31,41,55,0.08)] backdrop-blur-sm'>
+        <div className='mb-4 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground'><Route className='size-5' /></div>
+        <h2 className='font-semibold text-foreground'>Your next adventure starts here.</h2>
+        <p className='mt-1 max-w-sm text-sm text-muted-foreground'>Create a trip and Pack-It will help you prepare for every detail.</p>
+        <Button className='mt-5' onClick={onCreate}><Plus />Create a trip</Button>
+    </div>
+)
+
+const Home = () => {
+    const navigate = useNavigate()
+    const { trips, loading, error } = useTrips()
+    const sortedTrips = [...trips].sort((a, b) => getCreatedAtMs(b) - getCreatedAtMs(a))
+    const featuredTrip = sortedTrips[0]
+    const remainingTrips = sortedTrips.slice(1)
+    const continueTripName = (featuredTrip?.name?.trim() || featuredTrip?.destination?.trim() || 'your next trip')
+        .split(',')[0]
+        .trim()
+
+    if (error) return <ErrorScreen text={error.message ?? 'Failed to load trips.'} />
+
+    return (
+        <main className='min-h-full overflow-hidden bg-background'>
+            <section className='relative isolate overflow-visible bg-background'>
+                <div
+                    aria-hidden='true'
+                    className='pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[42rem] opacity-80 sm:h-[28rem]'
+                    style={{ backgroundImage: 'radial-gradient(ellipse 145% 74% at 50% 0%, #00AEFF 0%, #88D9FF 58%, #FFFFFF 100%)' }} />
+                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute left-[-5.5rem] top-[12rem] z-0 w-[17rem] max-w-none rotate-[5deg] scale-x-[-1] opacity-95 sm:left-[-4rem] sm:top-[7rem] sm:w-[22rem]' />
+                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute right-[-5.5rem] top-[14rem] z-0 w-[17rem] max-w-none -rotate-[2deg] opacity-95 sm:right-[-4rem] sm:top-[8rem] sm:w-[22rem]' />
+
+                <div className='relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-10 pt-[calc(5rem+env(safe-area-inset-top))] text-center sm:px-8 sm:pt-18 lg:px-10'>
+                    <header className='flex flex-col items-center'>
+                        <img src={logo_sm_white} alt='Pack-It' className='mb-4 size-15 animate-[chat-empty-state-in_500ms_ease-out_both] object-contain motion-reduce:animate-none' />
+                        <h1 className='max-w-sm animate-[chat-empty-state-in_500ms_ease-out_80ms_both] text-3xl font-semibold leading-[1.05] tracking-tight text-white motion-reduce:animate-none sm:text-4xl'>Continue packing for {continueTripName}?</h1>
+                    </header>
+
+                    <div className='mt-8 w-full max-w-4xl translate-y-16 text-left sm:translate-y-10'>
+                        {loading ? (
+                            <div className='w-full max-w-xl'><TripGhost /></div>
+                        ) : featuredTrip ? (
+                            <FeaturedTrip trip={featuredTrip} />
+                        ) : (
+                            <EmptyFeaturedTrip onCreate={() => navigate('/trips/new')} />
+                        )}
                     </div>
                 </div>
             </section>
 
-            <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-4 lg:py-10'>
-                <section>
-                    <h2 className='text-xl font-semibold text-neutral0'>Your Trips</h2>
-
-                    {tripsLoading ? (
-                        <div className='mt-4 grid gap-4 grid-cols-1 lg:grid-cols-2'>
-                            <TripGhost />
-                            <TripGhost />
-                            <TripGhost />
-                            <TripGhost />
-                        </div>
-                    ) : sortedTrips.length === 0 ? (
-                        <div className='flex flex-col gap-3 items-center justify-center py-16'>
-                            <div className='p-6 bg-neutral4 rounded-full'>
-                                <FaPlaneDeparture className='text-4xl text-neutral1' />
-                            </div>
-                            <div className='flex flex-col items-center'>
-                                <p className='text-neutral0 font-semibold'>No trips yet.</p>
-                                <p className='text-sm text-neutral1'>Click + to create your first one.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className='mt-4 grid gap-4 grid-cols-1 lg:grid-cols-2'>
-                            {sortedTrips.map((trip) => (
-                                <Trip key={trip.id} trip={trip} />
-                            ))}
-                        </div>
-                    )}
-                </section>
-            </div>
-
-            <FloatingActionButton />
-
+            <section className='mx-auto w-full max-w-4xl px-5 pb-12 pt-20 sm:px-8 sm:pb-16 lg:px-10'>
+                <div className='flex items-center justify-between gap-4'>
+                    <h2 className='text-lg font-medium text-foreground'>Your trips</h2>
+                    <Button onClick={() => navigate('/trips/new')}><Plus />New trip</Button>
+                </div>
+                {loading ? (
+                    <div className='mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
+                        <TripGhost />
+                        <TripGhost />
+                        <TripGhost />
+                    </div>
+                ) : remainingTrips.length > 0 ? (
+                    <div className='mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
+                        {remainingTrips.map((trip) => <Trip key={trip.id} trip={trip} />)}
+                    </div>
+                ) : (
+                    <p className='mt-3 text-sm text-muted-foreground'>{featuredTrip ? 'Your saved trips will appear here.' : 'Create a trip to start your travel plans.'}</p>
+                )}
+            </section>
         </main>
     )
-}
-
-const FloatingActionButton = () => {
-
-    const navigate = useNavigate();
-
-    return (
-        <Button
-            type='button'
-            aria-label='Create trip'
-            onClick={() => navigate('/trips/new')}
-            className={`fixed bottom-12 right-12 h-16 w-16 rounded-full! hover:scale-110 hidden! lg:flex!`}
-        >
-            <FaPlus className='text-xl' />
-        </Button>
-    )
-
 }
 
 export default Home

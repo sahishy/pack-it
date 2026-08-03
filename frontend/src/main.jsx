@@ -8,9 +8,11 @@ import { TripsProvider } from './contexts/TripsContext.jsx'
 import { ItemsProvider } from './contexts/ItemsContext.jsx'
 import { PlansProvider } from './contexts/PlansContext.jsx'
 import { SuitcasesProvider } from './contexts/SuitcasesContext.jsx'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 createRoot(document.getElementById('root')).render(
 	<StrictMode>
+		<TooltipProvider>
 		<BrowserRouter>
 			<AuthProvider>
 				<TripsProvider>
@@ -24,5 +26,6 @@ createRoot(document.getElementById('root')).render(
 				</TripsProvider>
 			</AuthProvider>
 		</BrowserRouter>
+		</TooltipProvider>
 	</StrictMode>,
 )

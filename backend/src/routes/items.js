@@ -65,6 +65,7 @@ itemsRouter.post('/trips/:tripId/items', async (req, res) => {
         name: itemData.name,
         category: itemData.category,
         quantity: Number(itemData.quantity),
+        suitcaseId: typeof itemData.suitcaseId === 'string' ? itemData.suitcaseId : '',
         weight: null,
         dimensions: null,
         checked: false,

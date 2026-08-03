@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
-import Navbar from '../components/ui/Navbar'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import Navbar from '@/components/layout/Navbar'
 import { FaSuitcaseRolling } from 'react-icons/fa6'
 
 const features = [

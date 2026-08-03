@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import BaseModal from '../ui/BaseModal'
-import Input from '../ui/Input'
-import Button from '../ui/Button'
+import { Button } from '@/components/ui/button'
+import FormInput from '@/components/common/FormInput'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { hasLowConfidence } from '../../utils/itemUtils'
 import useWeightFormatter from '../../hooks/useWeightFormatter'
 import {
@@ -124,23 +124,13 @@ const EditItemModal = ({
     const isDimensionsLow = hasLowConfidence(item?.dimensions?.confidence)
 
     return (
-        <BaseModal
-            open={open}
-            onClose={onClose}
-            title={`Edit ${item?.name ?? 'item'} metrics`}
-            footer={(
-                <div className='flex items-center gap-3'>
-                    <Button variant='secondary' className='flex-1' onClick={onClose} disabled={saving}>
-                        Close
-                    </Button>
-                    <Button type='submit' className='flex-1' form='edit-item-metrics-form' loading={saving} disabled={saving || hasInvalid}>
-                        Save
-                    </Button>
-                </div>
-            )}
-        >
+        <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose?.() }}>
+            <DialogContent className='sm:max-w-lg'>
+                <DialogHeader>
+                    <DialogTitle>{`Edit ${item?.name ?? 'item'} metrics`}</DialogTitle>
+                </DialogHeader>
             <form id='edit-item-metrics-form' className='flex flex-col gap-3' onSubmit={handleSubmit}>
-                <Input
+                <FormInput
                     label={`Weight (${weightUnitLabel})`}
                     id='weightKg'
                     type='number'
@@ -152,7 +142,7 @@ const EditItemModal = ({
                 />
 
                 <div className='grid gap-3 sm:grid-cols-3'>
-                    <Input
+                    <FormInput
                         label={`Length (${lengthUnitLabel})`}
                         id='lengthCm'
                         type='number'
@@ -163,7 +153,7 @@ const EditItemModal = ({
                         className={isDimensionsLow ? 'border-negative1! ring-2 ring-negative2' : ''}
                     />
 
-                    <Input
+                    <FormInput
                         label={`Width (${lengthUnitLabel})`}
                         id='widthCm'
                         type='number'
@@ -174,7 +164,7 @@ const EditItemModal = ({
                         className={isDimensionsLow ? 'border-negative1! ring-2 ring-negative2' : ''}
                     />
 
-                    <Input
+                    <FormInput
                         label={`Height (${lengthUnitLabel})`}
                         id='heightCm'
                         type='number'
@@ -188,7 +178,12 @@ const EditItemModal = ({
 
                 {error ? <p className='text-sm text-negative1'>{error.message}</p> : null}
             </form>
-        </BaseModal>
+                <DialogFooter>
+                    <Button variant='outline' onClick={onClose} disabled={saving}>Close</Button>
+                    <Button type='submit' form='edit-item-metrics-form' loading={saving} disabled={saving || hasInvalid}>Save</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }
 

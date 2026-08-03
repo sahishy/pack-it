@@ -1,26 +1,26 @@
 import { Link } from 'react-router-dom'
-import Card from '../ui/Card'
+import { ArrowUpRight } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 const Tool = ({ tool }) => {
 
-    const { name, description, path, icon: Icon, from, to } = tool
+    const { name, description, path, icon: Icon } = tool
 
     return (
-        <Link to={path}>
-            <Card className='h-full flex items-center gap-4 transition hover:-translate-y-1 hover:shadow-xl'>
-                <div
-                    className='flex p-4 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm'
-                    style={{
-                        backgroundImage: `linear-gradient(to bottom right, ${from}, ${to})`,
-                    }}
-                >
-                    <Icon className='text-3xl' />
-                </div>
-
-                <div className='min-w-0'>
-                    <h2 className='text-lg font-semibold text-neutral0'>{name}</h2>
-                    <p className='text-sm mt-1 text-neutral1'>{description}</p>
-                </div>
+        <Link to={path} className='group block h-full'>
+            <Card className='h-full transition-shadow group-hover:shadow-[0_12px_30px_rgba(31,41,55,0.06)]'>
+                <CardHeader>
+                    <div className='flex items-start justify-between'>
+                        <div className='flex size-10 items-center justify-center rounded-lg border bg-muted/30'>
+                            <Icon className='text-lg text-muted-foreground' />
+                        </div>
+                        <ArrowUpRight className='size-4 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5' />
+                    </div>
+                    <CardTitle className='pt-4'>{name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className='text-sm leading-relaxed text-muted-foreground'>{description}</p>
+                </CardContent>
             </Card>
         </Link>
     )

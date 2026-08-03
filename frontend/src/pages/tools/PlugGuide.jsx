@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import { FaBoltLightning, FaPlug, FaWaveSquare } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import CommandPalette from '../../components/ui/CommandPalette'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import CommandPalette from '@/components/common/CommandPalette'
 import { getPlugCountries, searchPlugCountries } from '../../services/tools/plugGuideService'
 
 import TypeAPlugImage from '../../assets/images/plugs/typeA.jpg'

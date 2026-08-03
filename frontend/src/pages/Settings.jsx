@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { FaGear, FaScaleBalanced } from 'react-icons/fa6'
 import { IoSunny } from 'react-icons/io5'
 import { useAuth } from '../contexts/AuthContext'
-import Card from '../components/ui/Card'
-import Select from '../components/popover/Select'
+import { Card } from '@/components/ui/card'
+import Select from '@/components/common/FormSelect'
 import { updateUserPreferences } from '../services/userService'
 
 const THEME_OPTIONS = [

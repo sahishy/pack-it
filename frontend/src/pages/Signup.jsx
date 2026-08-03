@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '../lib/firebase'
-import Card from '../components/ui/Card'
-import Input from '../components/ui/Input'
-import Button from '../components/ui/Button'
-import Navbar from '../components/ui/Navbar'
+import { Card } from '@/components/ui/card'
+import FormInput from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import Navbar from '@/components/layout/Navbar'
 import { createNewUserObject, createUserProfile } from '../services/userService'
 import { PiHandWavingFill } from 'react-icons/pi'
 import GoogleLogo from '../assets/google.png'
@@ -182,7 +182,7 @@ const Signup = () => {
 								<hr className='w-full border-neutral3'></hr>
 							</div>
 
-							<Input
+							<FormInput
 								id='email'
 								name='email'
 								type='email'
@@ -201,7 +201,7 @@ const Signup = () => {
 						<form onSubmit={handleSubmit} className='flex flex-col gap-2'>
 	
 							<div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-								<Input
+								<FormInput
 									label='First name'
 									id='firstName'
 									name='firstName'
@@ -209,7 +209,7 @@ const Signup = () => {
 									value={formData.firstName}
 									onChange={handleChange}
 								/>
-								<Input
+								<FormInput
 									label='Last name'
 									id='lastName'
 									name='lastName'
@@ -219,7 +219,7 @@ const Signup = () => {
 								/>
 							</div>
 
-							<Input
+							<FormInput
 								label='Password'
 								id='password'
 								name='password'
@@ -229,7 +229,7 @@ const Signup = () => {
 								onChange={handleChange}
 							/>
 
-							<Input
+							<FormInput
 								label='Confirm password'
 								id='confirmPassword'
 								name='confirmPassword'

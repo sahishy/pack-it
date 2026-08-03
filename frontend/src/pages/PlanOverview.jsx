@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { BsStar, BsStars } from 'react-icons/bs'
-import { FiCheckCircle, FiXCircle } from 'react-icons/fi'
-import Topbar from '../components/ui/Topbar'
-import Return from '../components/ui/Return'
-import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
-import LoadingScreen from '../components/ui/LoadingScreen'
-import ErrorScreen from '../components/ui/ErrorScreen'
+import { ArrowRight, CheckCircle2, CircleAlert, Sparkles } from 'lucide-react'
+import Return from '@/components/common/Return'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import LoadingScreen from '@/components/common/LoadingScreen'
+import ErrorScreen from '@/components/common/ErrorScreen'
 import { useAuth } from '../contexts/AuthContext'
 import { useTrips } from '../contexts/TripsContext'
 import { useTripItems } from '../contexts/ItemsContext'
@@ -19,7 +19,7 @@ import useWeightFormatter from '../hooks/useWeightFormatter'
 const PlanOverview = () => {
     const { tripId } = useParams()
     const navigate = useNavigate()
-    const { user, profile, logout } = useAuth()
+    const { user } = useAuth()
     const { trips, loading: tripsLoading, error: tripsError } = useTrips()
     const { items, loading: itemsLoading, error: itemsError } = useTripItems(tripId)
     const { plan, loading: planLoading, error: planError } = useTripPlan(tripId)
@@ -39,12 +39,12 @@ const PlanOverview = () => {
     const planResult = plan?.result ?? null
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
     const baggageLimit = Number(trip?.baggageLimit) || 0
-    const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
     const isResultReady = Boolean(planResult)
     const isSuccess = Boolean(planResult?.success)
     const strategySteps = plan?.strategy?.steps ?? []
     const hasGeneratedStrategy = strategySteps.length > 0
     const strategyLoadingText = 'AI is planning your packing strategy...'
+    const weightProgress = baggageLimit > 0 ? Math.min((totalWeight / baggageLimit) * 100, 100) : 0
 
     useEffect(() => {
         if (!trip || itemsLoading || planLoading || planResult || generatingResult) {
@@ -115,70 +115,62 @@ const PlanOverview = () => {
     }
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <Topbar displayName={displayName} email={user.email} onLogout={logout} />
-            <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-10'>
+        <main className='min-h-full'>
+            <div className='mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
                 <Return text='Back to trip' link={`/trips/${tripId}`} />
 
-                <section className='flex flex-col items-center gap-3 text-center'>
-                    <div className='rounded-full bg-linear-to-t from-primary0 to-primary1 p-4'>
-                        <BsStars className='text-2xl text-white' />
+                <section className='flex flex-col gap-3 border-b pb-6'>
+                    <Badge variant='secondary' className='w-fit'><Sparkles className='size-3.5' /> AI packing plan</Badge>
+                    <div>
+                        <h1 className='text-3xl font-semibold tracking-tight'>Packing analysis</h1>
+                        <p className='mt-1 text-muted-foreground'>A practical check of your list for {trip.destination}.</p>
                     </div>
-                    <h1 className='text-2xl font-semibold text-neutral0'>AI Packing Analysis</h1>
-                    <p className='text-sm text-neutral1'>Smart recommendations for your {trip.destination} trip</p>
                 </section>
 
-                <Card
-                    className={`flex items-center gap-4 border ${
-                        !isResultReady
-                            ? 'border-neutral2 bg-neutral5'
-                            : isSuccess
-                                ? 'border-positive1/30 bg-positive1/10'
-                                : 'border-negative1/30 bg-negative1/10'
-                    }`}
-                >
-                    {!isResultReady ? (
-                        <BsStars className='text-4xl text-primary0' />
-                    ) : isSuccess ? (
-                        <FiCheckCircle className='text-4xl text-positive1' />
-                    ) : (
-                        <FiXCircle className='text-4xl text-negative1' />
-                    )}
+                <div className='grid gap-6 lg:grid-cols-[0.85fr_1.15fr]'>
+                    <Card>
+                        <CardHeader>
+                            <div className='flex items-start justify-between gap-4'>
+                                <div>
+                                    <CardDescription>Weight check</CardDescription>
+                                    <CardTitle className='mt-1 text-2xl'>{!isResultReady ? 'Analyzing…' : isSuccess ? 'Within limit' : 'Over limit'}</CardTitle>
+                                </div>
+                                <div className={`rounded-full p-2 ${isResultReady && !isSuccess ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                    {isResultReady && !isSuccess ? <CircleAlert className='size-5' /> : <CheckCircle2 className='size-5' />}
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className='space-y-3'>
+                            <Progress value={weightProgress} />
+                            <div className='flex justify-between text-sm'>
+                                <span className='text-muted-foreground'>Packed</span>
+                                <span className='font-medium'>{formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(baggageLimit, { decimals: 2 })}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-                    <div className='flex flex-col gap-1'>
-                        <p
-                            className={`text-2xl font-semibold ${
-                                !isResultReady ? 'text-neutral0' : isSuccess ? 'text-positive0' : 'text-negative0'
-                            }`}
-                        >
-                            {!isResultReady ? 'Analyzing...' : isSuccess ? 'Within Limit' : 'Over Limit'}
-                        </p>
-                        <p className={`text-sm ${!isResultReady ? 'text-neutral1' : isSuccess ? 'text-positive1' : 'text-negative1'}`}>
-                            Current weight: {formatWeight(totalWeight, { decimals: 2 })} / {formatWeight(baggageLimit, { decimals: 2 })} limit
-                        </p>
-                    </div>
-                </Card>
-
-                <Card className='flex flex-col gap-3'>
-                    <h2 className='flex gap-3 items-center text-xl font-semibold text-neutral0'><BsStars className='text-neutral1'/> AI Recommendations</h2>
-                    <p className='text-sm text-neutral1'>
-                        {planResult?.summary ?? 'Analyzing your packing list...'}
-                    </p>
-                </Card>
+                    <Card>
+                        <CardHeader>
+                            <div className='flex items-center gap-2'><Sparkles className='size-4 text-muted-foreground' /><CardTitle>Recommendation</CardTitle></div>
+                            <CardDescription>Generated from your trip details and packing list.</CardDescription>
+                        </CardHeader>
+                        <CardContent><p className='leading-7 text-muted-foreground'>{planResult?.summary ?? 'Analyzing your packing list…'}</p></CardContent>
+                    </Card>
+                </div>
 
                 {actionError || generateResultError || generateStrategyError ? (
-                    <p className='text-sm text-negative1'>
+                    <p className='text-sm text-destructive'>
                         {actionError?.message ?? generateResultError?.message ?? generateStrategyError?.message}
                     </p>
                 ) : null}
 
                 <Button
-                    className='w-full py-3'
+                    className='w-full sm:w-fit sm:self-end'
                     disabled={(!canGenerateStrategy && !hasGeneratedStrategy) || !planResult}
                     loading={!hasGeneratedStrategy && (generatingStrategy || generatingResult || planLoading)}
                     onClick={handleGenerateStrategy}
                 >
-                    {hasGeneratedStrategy ? 'View Packing Strategy' : 'Get Packing Strategy'} <span className='ml-3'>→</span>
+                    {hasGeneratedStrategy ? 'View packing strategy' : 'Build packing strategy'} <ArrowRight className='size-4' />
                 </Button>
             </div>
         </main>
