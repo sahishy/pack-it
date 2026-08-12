@@ -191,13 +191,13 @@ Available suitcases: ${JSON.stringify(suitcases.map(({ id, name }) => ({ id, nam
 Current packing list: ${JSON.stringify(items.map(({ name, quantity, category, suitcaseId }) => ({ name, quantity, category, suitcaseId })))}
 `
 
-const classifyTravelScope = async ({ client, message, trip, hasImage }) => {
+const classifyTravelScope = async ({ client, message, trip, hasImage, recentMessages }) => {
     if (!message.trim()) return true
 
     const response = await client.responses.create({
         model: CHAT_MODEL,
-        instructions: `Classify whether a user request is within scope for a travel assistant. Allow packing, destinations, local restaurants and activities, itineraries, transit, lodging, airlines, travel products or brands, weather, currency, customs, translation for travel, accessibility, and travel safety. Deny unrelated homework, essays, coding, math, and general knowledge. If a request mixes travel and unrelated work, deny it. ${hasImage ? 'A photo is attached, so short requests that refer to the photo may be travel-related; still deny any explicitly unrelated task.' : ''} Reply with exactly ALLOW or DENY. The current destination is ${trip.destination ?? 'not specified'}.`,
-        input: message,
+        instructions: `Classify whether the latest user request is within scope for a travel assistant. Use the recent conversation to understand short follow-ups such as confirmations, questions about why information is needed, or references like "it" and "that". Allow follow-ups when they continue an in-scope travel conversation. Allow packing, destinations, local restaurants and activities, itineraries, transit, lodging, airlines, travel products or brands, weather, currency, customs, translation for travel, accessibility, and travel safety. Deny unrelated homework, essays, coding, math, and general knowledge. If a request mixes travel and unrelated work, deny it. ${hasImage ? 'A photo is attached, so short requests that refer to the photo may be travel-related; still deny any explicitly unrelated task.' : ''} Reply with exactly ALLOW or DENY. The current destination is ${trip.destination ?? 'not specified'}.`,
+        input: recentMessages,
         reasoning: { effort: 'none' },
         text: { verbosity: 'low' },
         max_output_tokens: 16,
@@ -300,13 +300,32 @@ const createChatResponse = async ({
         await reserveGuestUsage(env, uid, 'chatRequests', 'chat')
     }
 
+    await saveUserMessage()
+
+    const savedMessages = await queryAdminDocuments(
+        env,
+        'chatMessages',
+        [['userId', uid], ['tripId', tripId]],
+        500,
+        [{ fieldPath: 'createdAt', direction: 'ASCENDING' }],
+    )
+    const recentMessages = savedMessages
+        .filter(({ role, content }) => (role === 'user' || role === 'assistant') && content)
+        .slice(-3)
+        .map(({ role, content }) => ({ role, content }))
+
     const [moderationFlagged, travelRelated] = await Promise.all([
         isModerationFlagged({ client, message }),
-        classifyTravelScope({ client, message, trip: context.trip, hasImage }),
+        classifyTravelScope({
+            client,
+            message,
+            trip: context.trip,
+            hasImage,
+            recentMessages,
+        }),
     ])
 
     if (moderationFlagged || !travelRelated) {
-        await saveUserMessage()
         const responseMessage = moderationFlagged
             ? 'I can’t help with that request. I can still help with safe travel planning and packing questions.'
             : 'I’m here specifically for travel and packing. Ask me about your destination, restaurants, itinerary, gear, brands, or what to pack.'
@@ -330,15 +349,6 @@ const createChatResponse = async ({
         }
     }
 
-    await saveUserMessage()
-
-    const savedMessages = await queryAdminDocuments(
-        env,
-        'chatMessages',
-        [['userId', uid], ['tripId', tripId]],
-        500,
-        [{ fieldPath: 'createdAt', direction: 'ASCENDING' }],
-    )
     const tools = getTools(context.suitcases)
     const input = savedMessages
         .filter(({ role, content }) => (role === 'user' || role === 'assistant') && content)
