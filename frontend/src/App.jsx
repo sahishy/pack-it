@@ -22,7 +22,6 @@ import AppShell from '@/components/layout/AppShell'
 import Suitcases from './pages/Suitcases'
 import ProtectedRoute from './routes/ProtectedRoute'
 import PublicOnlyRoute from './routes/PublicOnlyRoute'
-import StartupRedirect from './routes/StartupRedirect'
 
 const resolveTheme = (preference) => {
 
@@ -46,7 +45,7 @@ const ScrollToTop = () => {
 }
 
 const CapacitorOnlyRoute = () => {
-	return Capacitor.isNativePlatform() ? <Outlet /> : <Navigate to='/landing' replace />
+	return Capacitor.isNativePlatform() ? <Outlet /> : <Navigate to='/' replace />
 }
 
 const WebOnlyRoute = () => {
@@ -81,20 +80,16 @@ const App = () => {
 			<ScrollToTop />
 			<Routes>
 
-			<Route
-				path='/'
-				element={<StartupRedirect />}
-			/>
-
 			<Route element={<WebOnlyRoute />}>
 				<Route
-					path='/landing'
+					index
 					element={
 						<PublicOnlyRoute>
 							<Landing />
 						</PublicOnlyRoute>
 					}
 				/>
+				<Route path='/landing' element={<Navigate to='/' replace />} />
 			</Route>
 
 			<Route path='/capacitor' element={<CapacitorOnlyRoute />}>
@@ -110,14 +105,14 @@ const App = () => {
 				<Route path='login' element={<Navigate to='/capacitor' replace />} />
 				<Route path='signup' element={<Navigate to='/capacitor' replace />} />
 
-				<Route path='*' element={<Navigate to='/landing' replace />} />
+				<Route path='*' element={<Navigate to='/capacitor' replace />} />
 			</Route>
 
 			<Route
 				path='/login'
 				element={
 					<PublicOnlyRoute>
-						<Navigate to='/landing?auth=login' replace />
+						<Navigate to='/?auth=login' replace />
 					</PublicOnlyRoute>
 				}
 			/>
@@ -126,7 +121,7 @@ const App = () => {
 				path='/signup'
 				element={
 					<PublicOnlyRoute>
-						<Navigate to='/landing?auth=signup' replace />
+						<Navigate to='/?auth=signup' replace />
 					</PublicOnlyRoute>
 				}
 			/>

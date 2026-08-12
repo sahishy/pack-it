@@ -121,7 +121,7 @@ const Settings = () => {
             setError('')
             setLoggingOut(true)
             await deleteGuestAccount()
-            navigate(Capacitor.isNativePlatform() ? '/capacitor' : '/landing', { replace: true })
+            navigate(Capacitor.isNativePlatform() ? '/capacitor' : '/', { replace: true })
         } catch (deleteError) {
             setError(deleteError?.message ?? 'Unable to delete guest data right now.')
             setLoggingOut(false)
@@ -142,7 +142,7 @@ const Settings = () => {
             setDeleteAccountError('')
             setDeletingAccount(true)
             await deleteAccount(deleteAccountEmail.trim())
-            navigate(Capacitor.isNativePlatform() ? '/capacitor' : '/landing', { replace: true })
+            navigate(Capacitor.isNativePlatform() ? '/capacitor' : '/', { replace: true })
         } catch (deleteError) {
             setDeleteAccountError(deleteError?.message ?? 'Unable to delete your account right now.')
             setDeletingAccount(false)
