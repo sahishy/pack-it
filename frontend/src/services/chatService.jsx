@@ -1,12 +1,19 @@
 import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
-import { workerPost } from './workerClient'
+import { workerPost, workerPostFormData } from './workerClient'
 
-const sendChatMessage = async ({ tripId, messageId, message }) => workerPost('/v1/ai/chat', {
-    tripId,
-    messageId,
-    message,
-})
+const sendChatMessage = async ({ tripId, messageId, message, image }) => {
+    if (!image) {
+        return workerPost('/v1/ai/chat', { tripId, messageId, message })
+    }
+
+    const formData = new FormData()
+    formData.append('tripId', tripId)
+    formData.append('messageId', messageId)
+    formData.append('message', message)
+    formData.append('image', image, image.name || 'chat-photo.jpg')
+    return workerPostFormData('/v1/ai/chat', formData)
+}
 
 const subscribeToTripChatMessages = (uid, tripId, onNext, onError) => {
     if (!uid || !tripId) {

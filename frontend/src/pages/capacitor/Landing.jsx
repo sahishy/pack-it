@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth'
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, UserRoundPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ const Landing = () => {
     const { continueAsGuest } = useAuth()
     const [getStartedOpen, setGetStartedOpen] = useState(false)
     const [loginOpen, setLoginOpen] = useState(false)
+    const [loginFormReady, setLoginFormReady] = useState(false)
     const [signupStep, setSignupStep] = useState('choice')
     const [loginStep, setLoginStep] = useState('email')
     const [signupData, setSignupData] = useState({ email: '', firstName: '', lastName: '', password: '', confirmPassword: '' })
@@ -31,6 +32,18 @@ const Landing = () => {
     const [authError, setAuthError] = useState('')
     const [guestLoading, setGuestLoading] = useState(false)
     const [guestError, setGuestError] = useState('')
+    useEffect(() => {
+        if (!loginOpen) {
+            setLoginFormReady(false)
+            return undefined
+        }
+
+        // Delay mounting the autofocus field until after the bottom sheet has
+        // opened. This matches the create-account path and lets iOS lay out
+        // around the keyboard correctly on the first focus.
+        const timeout = window.setTimeout(() => setLoginFormReady(true), 260)
+        return () => window.clearTimeout(timeout)
+    }, [loginOpen])
 
     const resetSignup = () => {
         setSignupStep('choice')
@@ -149,7 +162,7 @@ const Landing = () => {
 
                 <div className='space-y-3'>
                     <Button type='button' onClick={() => setGetStartedOpen(true)} className='h-14 w-full rounded-full! bg-white! bg-none! text-base text-[#07111a]! shadow-[0_12px_30px_rgba(0,0,0,.2)] before:hidden! hover:bg-white/92!'>Get started</Button>
-                    <Button type='button' variant='secondary' onClick={() => setLoginOpen(true)} className='h-14 w-full rounded-full! border border-white/16 bg-white/12! bg-none! text-base text-white! shadow-[inset_0_1px_0_rgba(255,255,255,.12)] before:hidden! hover:bg-white/18!'>Log in</Button>
+                    <Button type='button' variant='secondary' onClick={() => setLoginOpen(true)} className='h-14 w-full rounded-full! border border-white/16 bg-white/12! bg-none! text-base text-white! shadow-[inset_0_1px_0_rgb(255_255_255_/_0.12)] before:hidden! hover:bg-white/18!'>Log in</Button>
                 </div>
             </div>
 
@@ -206,9 +219,9 @@ const Landing = () => {
                             <SheetTitle className='mt-2 text-2xl font-semibold tracking-tight'>{loginStep === 'email' ? 'Welcome back' : 'Enter your password'}</SheetTitle>
                             <SheetDescription className='mt-2 leading-6'>{loginStep === 'email' ? 'Log in to pick up where you left off.' : `Continue with ${loginData.email}.`}</SheetDescription>
                         </SheetHeader>
-                        <form onSubmit={continueLogin} className='flex flex-1 flex-col' aria-busy={authLoading}>
+                        <form onSubmit={continueLogin} className='flex flex-1 flex-col' aria-busy={authLoading || !loginFormReady}>
                             <div className='space-y-4'>
-                                {loginStep === 'email' ? <FormInput autoFocus label='Email address' type='email' autoComplete='email' inputMode='email' placeholder='you@example.com' value={loginData.email} onChange={(event) => setLoginData((current) => ({ ...current, email: event.target.value }))} /> : <FormInput autoFocus label='Password' type='password' autoComplete='current-password' placeholder='Enter your password' value={loginData.password} onChange={(event) => setLoginData((current) => ({ ...current, password: event.target.value }))} />}
+                                {loginFormReady ? (loginStep === 'email' ? <FormInput autoFocus label='Email address' type='email' autoComplete='email' inputMode='email' placeholder='you@example.com' value={loginData.email} onChange={(event) => setLoginData((current) => ({ ...current, email: event.target.value }))} /> : <FormInput autoFocus label='Password' type='password' autoComplete='current-password' placeholder='Enter your password' value={loginData.password} onChange={(event) => setLoginData((current) => ({ ...current, password: event.target.value }))} />) : <div className='h-[4.5rem]' />}
                                 {authError ? <p className='rounded-xl bg-destructive/10 px-3 py-2.5 text-sm text-destructive'>{authError}</p> : null}
                             </div>
                             <div className='mt-auto mb-4 space-y-3'>
