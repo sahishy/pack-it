@@ -48,8 +48,8 @@ const FeaturedTrip = ({ trip }) => {
 
     return (
         <Card className='group grid gap-2! overflow-hidden p-2! transition-shadow hover:shadow-[0_12px_30px_rgba(31,41,55,0.06)] md:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)]'>
-                <div className='relative aspect-[16/9] overflow-hidden rounded-xl bg-muted md:aspect-auto md:min-h-64'>
-                    <img src={trip.thumbnailUrl || FALLBACK_TRIP_THUMBNAIL} alt={`${trip.destination} thumbnail`} className='size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]' />
+                <div className='relative aspect-video overflow-hidden rounded-xl bg-muted'>
+                    <img src={trip.thumbnailUrl || FALLBACK_TRIP_THUMBNAIL} alt={`${trip.destination} thumbnail`} className='block size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]' />
                     {countdownLabel && <Badge className='absolute right-3 top-3 border-0 bg-neutral1/20 text-white shadow-sm backdrop-blur-xl'><BiSolidPlaneAlt className='text-white' />{countdownLabel}</Badge>}
                 </div>
                 <div className='flex min-w-0 flex-col p-6 sm:p-7'>
