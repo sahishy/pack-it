@@ -3,6 +3,7 @@ import { verifyFirebaseAppCheckToken, verifyFirebaseIdToken, verifyFirebaseToken
 import { getAllowedOrigin, getCorsHeaders, json, withCors } from './lib/http.js'
 import { analyzeSuitcaseImage, generatePackingStrategy, predictItemMetrics } from './services/aiService.js'
 import { createChatResponse } from './services/chatService.js'
+import { transcribeAudio } from './services/transcriptionService.js'
 import { getDestinationThumbnail } from './services/thumbnailService.js'
 import {
     GuestLimitError,
@@ -17,6 +18,19 @@ import {
 
 const MAX_SUITCASE_IMAGE_BYTES = 20 * 1024 * 1024
 const MAX_MULTIPART_REQUEST_BYTES = MAX_SUITCASE_IMAGE_BYTES + (1024 * 1024)
+const MAX_CHAT_IMAGE_BYTES = 5 * 1024 * 1024
+const MAX_AUDIO_BYTES = 12 * 1024 * 1024
+const CHAT_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+const AUDIO_TYPES = new Set([
+    'audio/flac',
+    'audio/m4a',
+    'audio/mp4',
+    'audio/mpeg',
+    'audio/ogg',
+    'audio/wav',
+    'audio/webm',
+    'video/mp4',
+])
 
 const itemMetricsSchema = z.object({
     name: z.string().trim().min(1).max(200),
@@ -54,6 +68,12 @@ const chatSchema = z.object({
     tripId: z.string().trim().min(1).max(200),
     messageId: z.string().uuid(),
     message: z.string().trim().min(1).max(2000),
+}).strict()
+
+const chatImageSchema = z.object({
+    tripId: z.string().trim().min(1).max(200),
+    messageId: z.string().uuid(),
+    message: z.string().trim().max(2000),
 }).strict()
 
 const guestTripSchema = z.object({
@@ -126,6 +146,7 @@ const createHandler = ({
     visionProvider = analyzeSuitcaseImage,
     thumbnailProvider = getDestinationThumbnail,
     chatProvider = createChatResponse,
+    transcriptionProvider = transcribeAudio,
 } = {}) => async (request, env, executionContext) => {
     const startedAt = Date.now()
     const requestId = request.headers.get('cf-ray') ?? crypto.randomUUID()
@@ -157,6 +178,7 @@ const createHandler = ({
             '/v1/ai/packing-strategy',
             '/v1/ai/suitcase-vision',
             '/v1/ai/chat',
+            '/v1/ai/transcribe',
             '/v1/destinations/thumbnail',
             '/v1/guest/trips',
             '/v1/guest/items',
@@ -302,18 +324,107 @@ const createHandler = ({
         }
 
         if (pathname === '/v1/ai/chat') {
-            const input = await readJson(request, chatSchema)
+            const contentType = request.headers.get('Content-Type') ?? ''
+            let input
+            let imageBytes
+            let imageMimeType
+
+            if (contentType.includes('multipart/form-data')) {
+                const contentLength = Number(request.headers.get('Content-Length'))
+                if (Number.isFinite(contentLength) && contentLength > MAX_CHAT_IMAGE_BYTES + (512 * 1024)) {
+                    status = 413
+                    return withCors(json({ message: 'Chat photo must be 5 MB or smaller.' }, status), request, env)
+                }
+
+                let formData
+                try {
+                    formData = await request.formData()
+                } catch {
+                    status = 400
+                    return withCors(json({ message: 'Request body must be valid multipart form data.' }, status), request, env)
+                }
+                const image = formData.get('image')
+                const parsedInput = chatImageSchema.safeParse({
+                    tripId: formData.get('tripId'),
+                    messageId: formData.get('messageId'),
+                    message: formData.get('message') ?? '',
+                })
+                if (!parsedInput.success) {
+                    status = 400
+                    return withCors(json({ message: 'Invalid chat photo request.' }, status), request, env)
+                }
+                input = parsedInput.data
+                if (!image || typeof image.arrayBuffer !== 'function') {
+                    status = 400
+                    return withCors(json({ message: 'Chat photo is required.' }, status), request, env)
+                }
+                if (image.size > MAX_CHAT_IMAGE_BYTES) {
+                    status = 413
+                    return withCors(json({ message: 'Chat photo must be 5 MB or smaller.' }, status), request, env)
+                }
+                if (!CHAT_IMAGE_TYPES.has(image.type)) {
+                    status = 400
+                    return withCors(json({ message: 'Chat photos must be JPEG, PNG, or WebP.' }, status), request, env)
+                }
+                imageBytes = await image.arrayBuffer()
+                imageMimeType = image.type
+            } else {
+                input = await readJson(request, chatSchema)
+            }
             const result = await chatProvider({
                 env,
                 uid: user.uid,
                 isAnonymous: user.isAnonymous,
                 executionContext,
+                imageBytes,
+                imageMimeType,
                 ...input,
             })
             provider = result.meta?.provider ?? 'openai'
             source = result.meta?.source ?? 'ai'
             status = 200
             return withCors(json({ message: result.message, actions: result.actions }), request, env)
+        }
+
+        if (pathname === '/v1/ai/transcribe') {
+            const contentLength = Number(request.headers.get('Content-Length'))
+            if (Number.isFinite(contentLength) && contentLength > MAX_AUDIO_BYTES + (512 * 1024)) {
+                status = 413
+                return withCors(json({ message: 'Voice recordings must be one minute or less.' }, status), request, env)
+            }
+
+            let formData
+            try {
+                formData = await request.formData()
+            } catch {
+                status = 400
+                return withCors(json({ message: 'Request body must be valid multipart form data.' }, status), request, env)
+            }
+            const audio = formData.get('audio')
+            if (!audio || typeof audio.arrayBuffer !== 'function') {
+                status = 400
+                return withCors(json({ message: 'A voice recording is required.' }, status), request, env)
+            }
+            if (audio.size > MAX_AUDIO_BYTES) {
+                status = 413
+                return withCors(json({ message: 'Voice recordings must be one minute or less.' }, status), request, env)
+            }
+            const mimeType = String(audio.type).split(';')[0].toLowerCase()
+            if (!AUDIO_TYPES.has(mimeType)) {
+                status = 400
+                return withCors(json({ message: 'This audio format is not supported.' }, status), request, env)
+            }
+
+            const result = await transcriptionProvider({
+                env,
+                audioBytes: await audio.arrayBuffer(),
+                mimeType,
+                filename: audio.name || 'voice-message.webm',
+            })
+            provider = result.meta?.provider ?? 'openai'
+            source = result.meta?.source ?? 'ai'
+            status = 200
+            return withCors(json({ text: result.text }), request, env)
         }
 
         const input = await readJson(request, thumbnailSchema)
