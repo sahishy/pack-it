@@ -1,0 +1,95 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAnonymous() {
+      return signedIn() && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    function ownsExisting() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownsIncoming() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function ownerUnchanged() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    function ownsTrip(tripId) {
+      return exists(/databases/$(database)/documents/trips/$(tripId))
+        && get(/databases/$(database)/documents/trips/$(tripId)).data.userId == request.auth.uid;
+    }
+
+    function ownsSuitcase(suitcaseId) {
+      return suitcaseId == ''
+        || (
+          exists(/databases/$(database)/documents/suitcases/$(suitcaseId))
+          && get(/databases/$(database)/documents/suitcases/$(suitcaseId)).data.userId == request.auth.uid
+        );
+    }
+
+    match /users/{uid} {
+      allow read: if isUser(uid);
+      allow delete: if isUser(uid) && resource.data.uid == uid;
+      allow create: if isUser(uid) && request.resource.data.uid == uid;
+      allow update: if isUser(uid)
+        && resource.data.uid == uid
+        && request.resource.data.uid == uid;
+    }
+
+    match /trips/{tripId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming() && !isAnonymous();
+      allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged();
+    }
+
+    match /suitcases/{suitcaseId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming();
+      allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged();
+    }
+
+    match /items/{itemId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming()
+        && !isAnonymous()
+        && ownsTrip(request.resource.data.tripId)
+        && ownsSuitcase(request.resource.data.suitcaseId);
+      allow update: if ownsExisting()
+        && ownsIncoming()
+        && ownerUnchanged()
+        && request.resource.data.tripId == resource.data.tripId
+        && ownsTrip(request.resource.data.tripId)
+        && ownsSuitcase(request.resource.data.suitcaseId);
+    }
+
+    match /plans/{planId} {
+      allow read, delete: if ownsExisting();
+      allow create: if ownsIncoming() && ownsTrip(request.resource.data.tripId);
+      allow update: if ownsExisting()
+        && ownsIncoming()
+        && ownerUnchanged()
+        && request.resource.data.tripId == resource.data.tripId
+        && ownsTrip(request.resource.data.tripId);
+    }
+
+    match /chatMessages/{messageId} {
+      allow read, delete: if ownsExisting();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
