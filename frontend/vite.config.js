@@ -4,7 +4,9 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
-	base: './',
+	// Keep production assets rooted at the site origin so client-side routes such
+	// as /trips do not incorrectly request /trips/assets/* after a page refresh.
+	base: '/',
 	envDir: '.',
 	server: {
 		port: 5200,
