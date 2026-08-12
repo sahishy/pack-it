@@ -188,6 +188,10 @@ const Landing = () => {
                                 </form>
                             </>
                         )}
+                        <p className='text-center text-[9px] leading-[1.45] text-muted-foreground'>
+                            By continuing, you acknowledge our{' '}
+                            <a href='https://sites.google.com/view/pack-it-privacy/home' target='_blank' rel='noreferrer' className='underline transition-colors hover:text-foreground'>Privacy Policy</a>.
+                        </p>
                     </div>
                 </SheetContent>
             </Sheet>
@@ -211,6 +215,10 @@ const Landing = () => {
                                 <Button type='submit' loading={authLoading} className='h-14 w-full rounded-2xl!'>{loginStep === 'email' ? <>Continue <ArrowRight /></> : <><LockKeyhole /> Log in</>}</Button>
                             </div>
                         </form>
+                        <p className='text-center text-[9px] leading-[1.45] text-muted-foreground'>
+                            By continuing, you acknowledge our{' '}
+                            <a href='https://sites.google.com/view/pack-it-privacy/home' target='_blank' rel='noreferrer' className='underline transition-colors hover:text-foreground'>Privacy Policy</a>.
+                        </p>
                     </div>
                 </SheetContent>
             </Sheet>
