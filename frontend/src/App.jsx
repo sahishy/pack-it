@@ -46,7 +46,6 @@ const ScrollToTop = () => {
 }
 
 const CapacitorOnlyRoute = () => {
-	return <Outlet/>
 	return Capacitor.isNativePlatform() ? <Outlet /> : <Navigate to='/landing' replace />
 }
 
