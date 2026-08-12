@@ -1,80 +1,89 @@
-import { apiGet, apiPut } from './apiClient'
+import { doc, onSnapshot, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
-const POLL_INTERVAL_MS = 4000
+const DEFAULT_PREFERENCES = { theme: 'light', measurementSystem: 'metric' }
 
-const createNewUserObject = ({ uid, firstName, lastName, email, profilePictureUrl = '' }) => {
+const normalizePreferences = (preferences = {}) => ({
+    ...DEFAULT_PREFERENCES,
+    ...(preferences ?? {}),
+})
 
-    return {
-        uid: uid,
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        profilePictureUrl: profilePictureUrl,
-        preferences: {
-            theme: 'light',
-            measurementSystem: 'metric',
-        },
-        createdAt: new Date(),
-    }
+const createNewUserObject = ({ uid, firstName, lastName, email, profilePictureUrl = '', preferences = DEFAULT_PREFERENCES }) => ({
+    uid,
+    firstName,
+    lastName,
+    email,
+    profilePictureUrl,
+    preferences: normalizePreferences(preferences),
+})
 
-}
+const createGuestUserObject = (uid) => ({
+    uid,
+    firstName: 'Guest',
+    lastName: '',
+    email: '',
+    profilePictureUrl: '',
+    preferences: DEFAULT_PREFERENCES,
+})
 
-const createUserProfile = async (_uid, userData, options = {}) => {
-    await apiPut('/api/users/me', {
-        userData,
-        options,
-    })
-}
+const createUserProfile = async (uid, userData, options = {}) => {
+    const userRef = doc(db, 'users', uid)
 
-const updateUserInfo = async (_uid, userData) => {
-    await apiPut('/api/users/me', {
-        userData,
-        options: {
-            merge: true,
-        },
-    })
-}
-
-const updateUserPreferences = async (_uid, preferences) => {
-    await apiPut('/api/users/me', {
-        userData: {
-            preferences,
-        },
-        options: {
-            merge: true,
-        },
-    })
-}
-
-const subscribeToUserProfile = (_uid, onNext, onError) => {
-    let active = true
-
-    const syncProfile = async () => {
-        try {
-            const data = await apiGet('/api/users/me')
-            if (active) {
-                onNext(data?.profile ?? null)
-            }
-        } catch (error) {
-            if (active) {
-                onError?.(error)
-            }
+    await runTransaction(db, async (transaction) => {
+        const snapshot = await transaction.get(userRef)
+        const payload = {
+            ...userData,
+            uid,
+            preferences: normalizePreferences(userData.preferences),
+            updatedAt: serverTimestamp(),
         }
+
+        if (!snapshot.exists()) {
+            payload.createdAt = serverTimestamp()
+        }
+
+        transaction.set(userRef, payload, { merge: Boolean(options.merge) })
+    })
+}
+
+const updateUserInfo = async (uid, userData) => {
+    await setDoc(doc(db, 'users', uid), {
+        ...userData,
+        uid,
+        updatedAt: serverTimestamp(),
+    }, { merge: true })
+}
+
+const updateUserPreferences = async (uid, preferences) => {
+    await setDoc(doc(db, 'users', uid), {
+        uid,
+        preferences: normalizePreferences(preferences),
+        updatedAt: serverTimestamp(),
+    }, { merge: true })
+}
+
+const subscribeToUserProfile = (uid, onNext, onError) => {
+    if (!uid) {
+        onNext(null)
+        return () => {}
     }
 
-    void syncProfile()
-    const intervalId = setInterval(syncProfile, POLL_INTERVAL_MS)
+    return onSnapshot(doc(db, 'users', uid), (snapshot) => {
+        if (!snapshot.exists()) {
+            onNext(null)
+            return
+        }
 
-    return () => {
-        active = false
-        clearInterval(intervalId)
-    }
+        const profile = snapshot.data()
+        onNext({ ...profile, preferences: normalizePreferences(profile.preferences) })
+    }, onError)
 }
 
 export {
     createNewUserObject,
+    createGuestUserObject,
     createUserProfile,
+    subscribeToUserProfile,
     updateUserInfo,
     updateUserPreferences,
-    subscribeToUserProfile,
 }

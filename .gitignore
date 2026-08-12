@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 *.env
+.dev.vars*
+.firebase
 ios
 
 # Editor directories and files
@@ -24,3 +26,5 @@ ios
 *.njsproj
 *.sln
 *.sw?
+
+.secrets.production

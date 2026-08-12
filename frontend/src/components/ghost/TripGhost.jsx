@@ -1,4 +1,4 @@
-import Card from '../ui/Card'
+import { Card } from '@/components/ui/card'
 
 const TripGhost = () => {
     return (

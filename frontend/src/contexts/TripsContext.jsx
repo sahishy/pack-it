@@ -58,7 +58,7 @@ const TripsProvider = ({ children }) => {
         try {
             setDeleting(true)
             setDeleteError(null)
-            await deleteTrip(tripId)
+            await deleteTrip(user.uid, tripId)
         } catch (errorValue) {
             setDeleteError(errorValue)
             throw errorValue

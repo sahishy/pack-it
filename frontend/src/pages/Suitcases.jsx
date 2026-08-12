@@ -1,77 +1,69 @@
-import { useNavigate } from 'react-router-dom'
-import { FaSuitcaseRolling } from 'react-icons/fa6'
-import { FiPlus } from 'react-icons/fi'
-import Card from '../components/ui/Card'
-import Button from '../components/ui/Button'
-import { useSuitcases } from '../contexts/SuitcasesContext'
-import Suitcase from '../components/suitcases/Suitcase'
+import { useState } from 'react'
+import { Luggage, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { useSuitcases } from '@/contexts/SuitcasesContext'
+import Suitcase from '@/components/suitcases/Suitcase'
+import EditSuitcaseModal from '@/components/suitcases/EditSuitcaseModal'
+import NewSuitcase from './NewSuitcase'
 
 const Suitcases = () => {
-    const navigate = useNavigate()
-    const {
-        suitcases,
-        loading,
-        error,
-        saving,
-        saveError,
-        removeSuitcase,
-    } = useSuitcases()
+    const { suitcases, loading, error, saving, saveError, editSuitcase, removeSuitcase } = useSuitcases()
+    const [editingSuitcase, setEditingSuitcase] = useState(null)
+    const [editError, setEditError] = useState(null)
+    const [isNewSuitcaseOpen, setIsNewSuitcaseOpen] = useState(false)
+
+    const handleEditSuitcase = async (suitcaseData) => {
+        try {
+            setEditError(null)
+            await editSuitcase(editingSuitcase.id, suitcaseData)
+            setEditingSuitcase(null)
+        } catch (errorValue) {
+            setEditError(errorValue)
+        }
+    }
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <section className='w-full bg-none from-primary0 to-primary1 lg:bg-linear-to-r'>
-                <div className='m-6 flex max-w-4xl flex-col gap-6 px-6 py-10 rounded-xl bg-linear-to-r from-primary0 to-primary1 lg:m-auto lg:bg-none'>
-                    <div className='flex flex-col gap-2 items-center lg:items-start'>
-                        <h2 className='flex gap-2 items-center text-sm text-white/80'><FaSuitcaseRolling className='text-lg' />Suitcase manager</h2>
-                        <h1 className='text-4xl lg:text-5xl font-bold text-white'>Suitcases</h1>
-                        <p className='text-white/80'>Track your suitcase dimensions and assign items more intelligently.</p>
+        <main className='mx-auto w-full max-w-4xl px-5 py-8 sm:px-8 lg:py-12'>
+            <header className='flex items-center justify-between gap-4'>
+                <div>
+                    <h1 className='text-xl font-medium tracking-tight'>Suitcases</h1>
+                    {!loading ? <p className='mt-1 text-sm text-muted-foreground'>{suitcases.length === 1 ? '1 saved suitcase' : `${suitcases.length} saved suitcases`}</p> : null}
+                </div>
+                <Button size='sm' onClick={() => setIsNewSuitcaseOpen(true)}><Plus /> Add suitcase</Button>
+            </header>
+
+            <section className='pt-6'>
+                {error || saveError ? <p className='mb-4 text-sm text-destructive'>{error?.message ?? saveError?.message}</p> : null}
+                {loading ? (
+                    <Card className='p-2!'><CardContent className='py-10 text-center text-sm text-muted-foreground'>Loading suitcases…</CardContent></Card>
+                ) : suitcases.length === 0 ? (
+                    <div className='flex min-h-64 flex-col items-center justify-center px-6 text-center'>
+                        <div className='mb-4 flex size-11 items-center justify-center rounded-lg bg-muted'><Luggage className='size-5 text-muted-foreground' /></div>
+                        <h2 className='font-medium'>No suitcases yet</h2>
+                        <p className='mt-1 max-w-xs text-sm text-muted-foreground'>Save your luggage dimensions once to make future packing plans more accurate.</p>
                     </div>
-                </div>
+                ) : (
+                    <div className='grid gap-4 sm:grid-cols-2'>
+                        {suitcases.map((suitcase) => (
+                            <Suitcase key={suitcase.id} suitcase={suitcase} onEdit={(selectedSuitcase) => { setEditError(null); setEditingSuitcase(selectedSuitcase) }} onDelete={removeSuitcase} deleting={saving} />
+                        ))}
+                    </div>
+                )}
             </section>
-
-            <div className='mx-auto flex w-full max-w-4xl flex-col gap-6 px-6 py-4 lg:py-10'>
-                <div className='flex items-center justify-between gap-3'>
-                    <h2 className='text-xl font-semibold text-neutral0'>Your suitcases</h2>
-                    <Button className='flex items-center gap-2' onClick={() => navigate('/suitcases/new')}>
-                        <FiPlus /> Add suitcase
-                    </Button>
-                </div>
-
-                {error ? <p className='text-sm text-negative1'>{error.message}</p> : null}
-                {saveError ? <p className='text-sm text-negative1'>{saveError.message}</p> : null}
-
-                <section className='flex flex-col gap-3'>
-                    {loading ? (
-                        <Card>
-                            <p className='text-neutral1'>Loading suitcases...</p>
-                        </Card>
-                    ) : suitcases.length === 0 ? (
-                        <div className='flex flex-col gap-3 items-center justify-center py-16'>
-                            <div className='p-6 bg-neutral4 rounded-full'>
-                                <FaSuitcaseRolling className='text-4xl text-neutral1' />
-                            </div>
-                            <div className='flex flex-col items-center'>
-                                <p className='text-neutral0 font-semibold'>No suitcases yet.</p>
-                                <p className='text-sm text-neutral1'>Click "Add Suitcase" to add your suitcases.</p>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className='grid gap-3 sm:grid-cols-2'>
-                            {suitcases.map((suitcase) => (
-                                <Suitcase
-                                    key={suitcase.id}
-                                    suitcase={suitcase}
-                                    onDelete={removeSuitcase}
-                                    deleting={saving}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </section>
-            </div>
+            {editingSuitcase ? (
+                <EditSuitcaseModal
+                    open
+                    suitcase={editingSuitcase}
+                    onClose={() => { if (!saving) { setEditingSuitcase(null); setEditError(null) } }}
+                    onSubmit={handleEditSuitcase}
+                    saving={saving}
+                    error={editError}
+                />
+            ) : null}
+            {isNewSuitcaseOpen ? <NewSuitcase open onClose={() => setIsNewSuitcaseOpen(false)} /> : null}
         </main>
     )
-
 }
 
 export default Suitcases

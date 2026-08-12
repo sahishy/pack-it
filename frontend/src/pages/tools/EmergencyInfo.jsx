@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FaCircleCheck, FaCircleExclamation } from 'react-icons/fa6'
-import Card from '../../components/ui/Card'
-import Return from '../../components/ui/Return'
-import Input from '../../components/ui/Input'
-import Button from '../../components/ui/Button'
+import { Card } from '@/components/ui/card'
+import Return from '@/components/common/Return'
+import Input from '@/components/common/FormInput'
+import { Button } from '@/components/ui/button'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
 import {
-    getDefaultEmergencyInfo,
     getEmergencyInfo,
     saveEmergencyInfo,
 } from '../../services/tools/emergencyInfoService'
@@ -13,16 +13,11 @@ import {
 const TEXTAREA_BASE_CLASS = 'w-full rounded-xl border border-neutral2 bg-neutral5 px-3 py-2.5 text-sm text-neutral0 outline-none transition placeholder:text-neutral1 focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
 
 const EmergencyInfo = () => {
-    const [formValues, setFormValues] = useState(() => getDefaultEmergencyInfo())
+    const [formValues, setFormValues] = useState(() => getEmergencyInfo())
     const [saveState, setSaveState] = useState('idle')
 
     const isSaveSuccess = useMemo(() => saveState === 'saved', [saveState])
     const isSaveError = useMemo(() => saveState === 'error', [saveState])
-
-    useEffect(() => {
-        const storedValues = getEmergencyInfo()
-        setFormValues(storedValues)
-    }, [])
 
     const updateField = (field, value) => {
         setSaveState('idle')
@@ -46,10 +41,12 @@ const EmergencyInfo = () => {
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Emergency Info</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Store critical personal details for travel emergencies.</p>
-                </div>
+                <ToolPageHeader
+                    title='Emergency Info'
+                    description='Store critical personal details for travel emergencies.'
+                    icon={FaCircleExclamation}
+                    color='#ff5f4a'
+                />
 
                 <Card className='border-none bg-linear-to-r from-[#ff5f4a] to-[#ff8a00]'>
                     <div className='flex items-start gap-4'>

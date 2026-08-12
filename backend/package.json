@@ -1,20 +1,20 @@
 {
-  "name": "pack-it-backend",
-  "version": "1.0.0",
+  "name": "pack-it-worker",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --env production",
+    "check": "WRANGLER_LOG_PATH=/tmp/pack-it-wrangler.log wrangler deploy --dry-run --outdir dist --env=\"\"",
+    "check:production": "WRANGLER_LOG_PATH=/tmp/pack-it-wrangler.log wrangler deploy --dry-run --outdir dist-production --env production"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "firebase": "^12.11.0",
-    "firebase-admin": "^13.5.0",
-    "multer": "^2.0.0",
+    "jose": "^6.1.0",
     "openai": "^4.104.0",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.68.0"
   }
 }

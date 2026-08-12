@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "pack-it-backend" generated at 2026-08-11T19:21:37.478Z.

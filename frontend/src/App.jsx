@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 import { useAuth } from './contexts/AuthContext'
 import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Signup from './pages/Signup'
+import CapacitorLanding from './pages/capacitor/Landing'
 import Home from './pages/Home'
 import Tools from './pages/Tools'
 import Settings from './pages/Settings'
@@ -13,16 +13,16 @@ import PlugGuide from './pages/tools/PlugGuide'
 import UnitConverter from './pages/tools/UnitConverter'
 import LiquidChecker from './pages/tools/LiquidChecker'
 import EmergencyInfo from './pages/tools/EmergencyInfo'
-import NewTrip from './pages/NewTrip'
 import EditTrip from './pages/EditTrip'
 import TripOverview from './pages/TripOverview'
 import PlanOverview from './pages/PlanOverview'
 import StrategyOverview from './pages/StrategyOverview'
-import LoadingScreen from './components/ui/LoadingScreen'
-import Topbar from './components/ui/Topbar'
-import BottomBar from './components/ui/BottomBar'
+import LoadingScreen from '@/components/common/LoadingScreen'
+import AppShell from '@/components/layout/AppShell'
 import Suitcases from './pages/Suitcases'
-import NewSuitcase from './pages/NewSuitcase'
+import ProtectedRoute from './routes/ProtectedRoute'
+import PublicOnlyRoute from './routes/PublicOnlyRoute'
+import StartupRedirect from './routes/StartupRedirect'
 
 const resolveTheme = (preference) => {
 
@@ -35,55 +35,6 @@ const resolveTheme = (preference) => {
 	
 }
 
-const ProtectedRoute = ({ children }) => {
-
-	const { user, loading } = useAuth()
-
-	if(loading) {
-		return <LoadingScreen className='bg-neutral4' />
-	}
-	if(!user) {
-		return <Navigate to='/login' replace />
-	}
-
-	return children
-
-}
-
-const PublicOnlyRoute = ({ children }) => {
-
-	const { user, loading } = useAuth()
-
-	if(loading) {
-		return <LoadingScreen className='bg-neutral4' />
-	}
-	if(user) {
-		return <Navigate to='/home' replace />
-	}
-
-	return children
-
-}
-
-const ProtectedTopbarLayout = () => {
-
-	const location = useLocation()
-	const { user, profile, logout } = useAuth()
-	const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user.email
-	const showBottomBar = location.pathname.startsWith('/home') || location.pathname.startsWith('/suitcases') || location.pathname.startsWith('/tools') || location.pathname.startsWith('/settings')
-
-	return (
-		<>
-			<Topbar displayName={displayName} email={user.email} onLogout={logout} />
-			<div className={showBottomBar ? 'pb-32 lg:pb-0' : ''}>
-				<Outlet />
-			</div>
-			{showBottomBar ? <BottomBar displayName={displayName} email={user.email} onLogout={logout}/> : null}
-		</>
-	)
-
-}
-
 const ScrollToTop = () => {
     const { pathname } = useLocation()
 
@@ -92,6 +43,14 @@ const ScrollToTop = () => {
     }, [pathname])
 
     return null
+}
+
+const CapacitorOnlyRoute = () => {
+	return Capacitor.isNativePlatform() ? <Outlet /> : <Navigate to='/landing' replace />
+}
+
+const WebOnlyRoute = () => {
+	return Capacitor.isNativePlatform() ? <Navigate to='/capacitor' replace /> : <Outlet />
 }
 
 const App = () => {
@@ -124,18 +83,41 @@ const App = () => {
 
 			<Route
 				path='/'
-				element={
-					<PublicOnlyRoute>
-						<Landing />
-					</PublicOnlyRoute>
-				}
+				element={<StartupRedirect />}
 			/>
+
+			<Route element={<WebOnlyRoute />}>
+				<Route
+					path='/landing'
+					element={
+						<PublicOnlyRoute>
+							<Landing />
+						</PublicOnlyRoute>
+					}
+				/>
+			</Route>
+
+			<Route path='/capacitor' element={<CapacitorOnlyRoute />}>
+				<Route
+					index
+					element={
+						<PublicOnlyRoute>
+							<CapacitorLanding />
+						</PublicOnlyRoute>
+					}
+				/>
+
+				<Route path='login' element={<Navigate to='/capacitor' replace />} />
+				<Route path='signup' element={<Navigate to='/capacitor' replace />} />
+
+				<Route path='*' element={<Navigate to='/landing' replace />} />
+			</Route>
 
 			<Route
 				path='/login'
 				element={
 					<PublicOnlyRoute>
-						<Login />
+						<Navigate to='/landing?auth=login' replace />
 					</PublicOnlyRoute>
 				}
 			/>
@@ -144,7 +126,7 @@ const App = () => {
 				path='/signup'
 				element={
 					<PublicOnlyRoute>
-						<Signup />
+						<Navigate to='/landing?auth=signup' replace />
 					</PublicOnlyRoute>
 				}
 			/>
@@ -152,7 +134,7 @@ const App = () => {
 			<Route
 				element={
 					<ProtectedRoute>
-						<ProtectedTopbarLayout />
+						<AppShell />
 					</ProtectedRoute>
 				}
 			>
@@ -166,61 +148,11 @@ const App = () => {
 				<Route path='/tools/unit-converter' element={<UnitConverter />} />
 				<Route path='/tools/liquid-checker' element={<LiquidChecker />} />
 				<Route path='/tools/emergency-info' element={<EmergencyInfo />} />
+				<Route path='/trips/:tripId/edit' element={<EditTrip />} />
+				<Route path='/trips/:tripId' element={<TripOverview />} />
+				<Route path='/trips/:tripId/plan' element={<PlanOverview />} />
+				<Route path='/trips/:tripId/plan/strategy' element={<StrategyOverview />} />
 			</Route>
-
-			<Route
-				path='/suitcases/new'
-				element={
-					<ProtectedRoute>
-						<NewSuitcase />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/new'
-				element={
-					<ProtectedRoute>
-						<NewTrip />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/edit'
-				element={
-					<ProtectedRoute>
-						<EditTrip />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId'
-				element={
-					<ProtectedRoute>
-						<TripOverview />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/plan'
-				element={
-					<ProtectedRoute>
-						<PlanOverview />
-					</ProtectedRoute>
-				}
-			/>
-
-			<Route
-				path='/trips/:tripId/plan/strategy'
-				element={
-					<ProtectedRoute>
-						<StrategyOverview />
-					</ProtectedRoute>
-				}
-			/>
 			
 			<Route path='*' element={<Navigate to='/' replace />} />
 

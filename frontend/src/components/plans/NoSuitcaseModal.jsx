@@ -1,27 +1,22 @@
-import BaseModal from '../ui/BaseModal'
-import Button from '../ui/Button'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const NoSuitcaseModal = ({ open, onClose, onAddSuitcase }) => {
     return (
-        <BaseModal
-            open={open}
-            onClose={onClose}
-            title='Add a suitcase first'
-            footer={(
-                <div className='flex items-center gap-3'>
-                    <Button variant='secondary' className='flex-1' onClick={onClose}>
-                        Cancel
-                    </Button>
-                    <Button onClick={onAddSuitcase} className='flex-1'>
-                        Add Suitcase
-                    </Button>
+        <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen) onClose?.() }}>
+            <DialogContent className='gap-6 rounded-2xl! p-6 sm:max-w-lg'>
+                <DialogHeader className='gap-2 pr-8'>
+                    <DialogTitle className='text-xl'>Add a suitcase first</DialogTitle>
+                    <DialogDescription className='max-w-md leading-6'>
+                        You need at least one of your suitcases listed before we can generate a packing strategy.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className='grid grid-cols-2 gap-3'>
+                    <Button className='w-full' variant='outline' onClick={onClose}>Cancel</Button>
+                    <Button className='w-full' onClick={onAddSuitcase}>Add suitcase</Button>
                 </div>
-            )}
-        >
-            <p className='text-sm text-neutral1'>
-                You need at least one of your suitcases listed before we can generate a packing strategy.
-            </p>
-        </BaseModal>
+            </DialogContent>
+        </Dialog>
     )
 }
 

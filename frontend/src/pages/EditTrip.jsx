@@ -1,27 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import Card from '../components/ui/Card'
-import Input from '../components/ui/Input'
-import DateSelector from '../components/ui/DateSelector'
-import Button from '../components/ui/Button'
-import Select from '../components/popover/Select'
-import Counter from '../components/popover/Counter'
-import CommandPalette from '../components/ui/CommandPalette'
-import Topbar from '../components/ui/Topbar'
-import Return from '../components/ui/Return'
+import FormInput from '@/components/common/FormInput'
+import DateRangeSelector from '@/components/common/DateRangeSelector'
+import { Button } from '@/components/ui/button'
+import Select from '@/components/common/FormSelect'
+import { Counter } from '@/components/ui/counter'
+import CommandPalette from '@/components/common/CommandPalette'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useAuth } from '../contexts/AuthContext'
 import { useTrips } from '../contexts/TripsContext'
 import { getAirlineDisplayById, searchAirlines } from '../utils/airlineUtils'
 import { FLIGHT_CLASS_OPTIONS, getTripById, TRIP_PURPOSE_OPTIONS } from '../utils/tripUtils'
-import LoadingScreen from '../components/ui/LoadingScreen'
-import ErrorScreen from '../components/ui/ErrorScreen'
+import LoadingScreen from '@/components/common/LoadingScreen'
+import ErrorScreen from '@/components/common/ErrorScreen'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 import { convertWeightToKg } from '../utils/measurementUtils'
 
 const EditTrip = () => {
     const navigate = useNavigate()
     const { tripId } = useParams()
-    const { user, profile, logout } = useAuth()
+    const { user } = useAuth()
     const {
         trips,
         loading: tripsLoading,
@@ -45,8 +43,6 @@ const EditTrip = () => {
         flightClass: '',
         baggageLimit: '',
     }))
-
-    const displayName = profile?.firstName ? `${profile.firstName} ${profile?.lastName ?? ''}`.trim() : user?.email
 
     useEffect(() => {
         if (!trip) {
@@ -133,30 +129,26 @@ const EditTrip = () => {
     }
 
     if (tripsLoading) {
-        return <LoadingScreen text='Loading trip...' className='bg-neutral4' />
+        return <LoadingScreen text='Loading trip...' />
     }
 
     if (tripsError || !trip) {
-        return <ErrorScreen text='Trip not found.' className='bg-neutral4' />
+        return <ErrorScreen text='Trip not found.' />
     }
 
-    const requiredAsterisk = <span className='text-negative1'>*</span>
+    const requiredAsterisk = <span className='text-destructive'>*</span>
 
     return (
-        <main className='min-h-screen bg-neutral5'>
-            <Topbar displayName={displayName} email={user?.email} onLogout={logout} />
-
-            <div className='mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10'>
-                <Return text='Back to trip overview' link={`/trips/${tripId}`} />
-
-                <Card>
-                    <div>
-                        <h1 className='text-center text-3xl font-semibold text-neutral0'>Edit trip</h1>
-                        <p className='mt-1 text-center text-sm text-neutral1'>Update your trip details.</p>
-                    </div>
+        <main className='min-h-full'>
+            <Dialog open onOpenChange={(open) => { if (!open && !updating) navigate(`/trips/${tripId}`) }}>
+                <DialogContent className='max-h-[90svh] overflow-y-auto sm:max-w-2xl'>
+                    <DialogHeader className='pr-8'>
+                        <DialogTitle className='text-xl'>Edit trip</DialogTitle>
+                        <DialogDescription>Update the itinerary and baggage details for this trip.</DialogDescription>
+                    </DialogHeader>
 
                     <form onSubmit={handleSubmit} className='mt-6 grid gap-4'>
-                        <Input
+                        <FormInput
                             label={<><span>Destination </span>{requiredAsterisk}</>}
                             name='destination'
                             placeholder='e.g. Paris, France'
@@ -164,24 +156,15 @@ const EditTrip = () => {
                             onChange={handleChange}
                         />
 
-                        <div className='flex flex-col gap-4 lg:flex-row'>
-                            <DateSelector
-                                label={<><span>Start Date </span>{requiredAsterisk}</>}
-                                id='startDate'
-                                name='startDate'
-                                containerClassName='flex-1'
-                                value={formData.startDate}
-                                onChange={handleChange}
-                            />
-                            <DateSelector
-                                label={<><span>End Date </span>{requiredAsterisk}</>}
-                                id='endDate'
-                                name='endDate'
-                                containerClassName='flex-1'
-                                value={formData.endDate}
-                                onChange={handleChange}
-                            />
-                        </div>
+                        <DateRangeSelector
+                            label={<><span>Trip dates </span>{requiredAsterisk}</>}
+                            id='tripDates'
+                            startDate={formData.startDate}
+                            endDate={formData.endDate}
+                            onChange={({ startDate, endDate }) => {
+                                setFormData((prev) => ({ ...prev, startDate, endDate }))
+                            }}
+                        />
 
                         <div className='flex flex-col gap-4 lg:flex-row'>
                             <Select
@@ -207,7 +190,7 @@ const EditTrip = () => {
 
                         <div className='flex flex-col gap-4 lg:flex-row'>
                             <div className='flex-1'>
-                                <label htmlFor='airline' className='text-sm font-medium text-neutral0'>
+                                <label htmlFor='airline' className='text-sm font-medium'>
                                     Airline
                                 </label>
 
@@ -218,7 +201,7 @@ const EditTrip = () => {
                                         setAirlineQuery(selectedAirline?.name ?? '')
                                         setIsAirlinePaletteOpen(true)
                                     }}
-                                    className='mt-1 flex min-h-10.5 w-full cursor-pointer items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
+                                    className='mt-1 flex min-h-10 w-full cursor-pointer items-center gap-3 rounded-lg border bg-background px-3 py-2 text-sm shadow-xs transition hover:bg-accent'
                                 >
                                     {selectedAirline?.logo ? (
                                         <img
@@ -228,7 +211,7 @@ const EditTrip = () => {
                                         />
                                     ) : null}
 
-                                    <span className={selectedAirline?.name ? 'text-neutral0' : 'text-neutral1'}>
+                                    <span className={selectedAirline?.name ? '' : 'text-muted-foreground'}>
                                         {selectedAirline?.name || 'Select an airline'}
                                     </span>
                                 </button>
@@ -245,11 +228,11 @@ const EditTrip = () => {
                             />
                         </div>
 
-                        {error ? <p className='text-sm text-negative1'>{error}</p> : null}
-                        {updateError ? <p className='text-sm text-negative1'>{updateError.message}</p> : null}
+                        {error ? <p className='text-sm text-destructive'>{error}</p> : null}
+                        {updateError ? <p className='text-sm text-destructive'>{updateError.message}</p> : null}
 
                         <Button type='submit' loading={updating} disabled={hasMissingRequiredField} className='mt-3'>
-                            Save Changes
+                            Save changes
                         </Button>
                     </form>
 
@@ -268,8 +251,8 @@ const EditTrip = () => {
                             setAirlineQuery('')
                         }}
                     />
-                </Card>
-            </div>
+                </DialogContent>
+            </Dialog>
         </main>
     )
 }

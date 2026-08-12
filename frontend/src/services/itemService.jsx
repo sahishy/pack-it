@@ -1,25 +1,81 @@
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
-import { db } from '../lib/firebase'
-import { apiDelete, apiPatch, apiPost } from './apiClient'
+import {
+    addDoc,
+    collection,
+    deleteDoc,
+    doc,
+    onSnapshot,
+    query,
+    serverTimestamp,
+    updateDoc,
+    where,
+} from 'firebase/firestore'
+import { auth, db } from '../lib/firebase'
+import { invalidateTripPlan } from './planService'
+import { workerPost } from './workerClient'
 
-const createItem = async (_uid, tripId, itemData) => {
-    const data = await apiPost(`/api/trips/${tripId}/items`, { itemData })
-    const itemId = data?.item?.id
+const failedMetrics = {
+    weight: { success: false, weightKg: -1, confidence: 0, reason: 'Server failure' },
+    dimensions: {
+        success: false,
+        lengthCm: -1,
+        widthCm: -1,
+        heightCm: -1,
+        confidence: 0,
+        orientationAssumption: '',
+        reason: 'Server failure',
+    },
+}
 
-    if (!itemId) {
-        return itemId
+const createItem = async (uid, tripId, itemData) => {
+    if (auth.currentUser?.isAnonymous) {
+        const result = await workerPost('/v1/guest/items', { tripId, ...itemData })
+        return result.id
     }
 
-    void apiPatch(`/api/items/${itemId}/metrics`).catch((error) => {
-        console.error('Failed to predict item metrics', error)
+    const itemRef = await addDoc(collection(db, 'items'), {
+        userId: uid,
+        tripId,
+        name: itemData.name,
+        category: itemData.category,
+        quantity: Number(itemData.quantity),
+        suitcaseId: typeof itemData.suitcaseId === 'string' ? itemData.suitcaseId : '',
+        weight: null,
+        dimensions: null,
+        checked: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
     })
 
-    return itemId
+    void (async () => {
+        let metrics = failedMetrics
+
+        try {
+            metrics = await workerPost('/v1/ai/item-metrics', {
+                name: itemData.name,
+                quantity: Number(itemData.quantity),
+            })
+        } catch (error) {
+            console.error('Failed to predict item metrics', error)
+        }
+
+        try {
+            await updateDoc(itemRef, {
+                weight: metrics?.weight ?? failedMetrics.weight,
+                dimensions: metrics?.dimensions ?? failedMetrics.dimensions,
+                updatedAt: serverTimestamp(),
+            })
+        } catch (error) {
+            if (error?.code !== 'not-found') {
+                console.error('Failed to save item metrics', error)
+            }
+        }
+    })()
+
+    return itemRef.id
 }
 
 const subscribeToTripItems = (uid, tripId, onNext, onError) => {
-
-    if(!uid || !tripId) {
+    if (!uid || !tripId) {
         onNext([])
         return () => {}
     }
@@ -30,57 +86,55 @@ const subscribeToTripItems = (uid, tripId, onNext, onError) => {
         where('tripId', '==', tripId),
     )
 
-    return onSnapshot(
-        itemsQuery,
-        (snapshot) => {
-            const items = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }))
-
-            onNext(items)
-        },
-        (error) => {
-            onError?.(error)
-        },
-    )
-    
+    return onSnapshot(itemsQuery, (snapshot) => {
+        onNext(snapshot.docs.map((itemDoc) => ({ id: itemDoc.id, ...itemDoc.data() })))
+    }, onError)
 }
 
 const updateItemChecked = async (itemId, checked) => {
-    await apiPatch(`/api/items/${itemId}/checked`, { checked })
-}
-
-const updateItemManualMetrics = async (itemId, { weightKg, lengthCm, widthCm, heightCm }) => {
-    await apiPatch(`/api/items/${itemId}/manual-metrics`, {
-        weight: {
-            weightKg,
-        },
-        dimensions: {
-            lengthCm,
-            widthCm,
-            heightCm,
-        },
+    await updateDoc(doc(db, 'items', itemId), {
+        checked: Boolean(checked),
+        updatedAt: serverTimestamp(),
     })
 }
 
-const removeItem = async (itemId) => {
-    await apiDelete(`/api/items/${itemId}`)
-}
+const updateItemManualMetrics = async (uid, tripId, itemId, { weightKg, lengthCm, widthCm, heightCm }) => {
+    const numbers = [weightKg, lengthCm, widthCm, heightCm].map(Number)
 
-const removeTripItems = async (_uid, tripId) => {
-    if (!tripId) {
-        return
+    if (numbers.some((value) => !Number.isFinite(value) || value <= 0)) {
+        throw new Error('Weight and all dimensions must be greater than 0.')
     }
 
-    await apiDelete(`/api/trips/${tripId}/items`)
+    await updateDoc(doc(db, 'items', itemId), {
+        weight: {
+            success: true,
+            weightKg: Number(numbers[0].toFixed(2)),
+            confidence: 1,
+            reason: '',
+        },
+        dimensions: {
+            success: true,
+            lengthCm: Number(numbers[1].toFixed(2)),
+            widthCm: Number(numbers[2].toFixed(2)),
+            heightCm: Number(numbers[3].toFixed(2)),
+            confidence: 1,
+            orientationAssumption: 'Manual override',
+            reason: '',
+        },
+        updatedAt: serverTimestamp(),
+    })
+    await invalidateTripPlan(uid, tripId)
+}
+
+const removeItem = async (uid, tripId, itemId) => {
+    await deleteDoc(doc(db, 'items', itemId))
+    await invalidateTripPlan(uid, tripId)
 }
 
 export {
     createItem,
+    removeItem,
     subscribeToTripItems,
     updateItemChecked,
     updateItemManualMetrics,
-    removeItem,
-    removeTripItems,
 }

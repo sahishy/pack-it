@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is([data-theme='dark'], [data-theme='dark'] *));
 
 @theme {
 
@@ -30,6 +35,8 @@
 
 html {
 
+	/* margin-top: env(safe-area-inset-top); */
+
     background-color: var(--color-neutral5);
     @apply text-neutral0;
 
@@ -60,14 +67,313 @@ html {
 	--color-warning2: #78350f;
 
 	--color-shadow: rgba(0, 0, 0, 0);
+	--home-sky-gradient: radial-gradient(ellipse 145% 78% at 50% 0%, #29427c 0%, #243664 38%, #182341 68%, var(--background) 100%);
+	--trip-sky-gradient: linear-gradient(to bottom, #29427c 0%, #243664 42%, #182341 70%, var(--background) 100%);
 }
 
-.no-spinner::-webkit-outer-spin-button,
-.no-spinner::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+@theme inline {
+
+	--font-heading: var(--font-sans);
+
+	--font-sans: 'Geist Variable', sans-serif;
+
+	--color-sidebar-ring: var(--sidebar-ring);
+
+	--color-sidebar-border: var(--sidebar-border);
+
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+
+	--color-sidebar-accent: var(--sidebar-accent);
+
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+
+	--color-sidebar-primary: var(--sidebar-primary);
+
+	--color-sidebar-foreground: var(--sidebar-foreground);
+
+	--color-sidebar: var(--sidebar);
+
+	--color-chart-5: var(--chart-5);
+
+	--color-chart-4: var(--chart-4);
+
+	--color-chart-3: var(--chart-3);
+
+	--color-chart-2: var(--chart-2);
+
+	--color-chart-1: var(--chart-1);
+
+	--color-ring: var(--ring);
+
+	--color-input: var(--input);
+
+	--color-border: var(--border);
+
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-success-subtle: var(--success-subtle);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-warning-subtle: var(--warning-subtle);
+
+	--color-accent-foreground: var(--accent-foreground);
+
+	--color-accent: var(--accent);
+
+	--color-muted-foreground: var(--muted-foreground);
+
+	--color-muted: var(--muted);
+
+	--color-secondary-foreground: var(--secondary-foreground);
+
+	--color-secondary: var(--secondary);
+
+	--color-primary-foreground: var(--primary-foreground);
+
+	--color-primary: var(--primary);
+
+	--color-popover-foreground: var(--popover-foreground);
+
+	--color-popover: var(--popover);
+
+	--color-card-foreground: var(--card-foreground);
+
+	--color-card: var(--card);
+
+	--color-foreground: var(--foreground);
+
+	--color-background: var(--background);
+
+	--radius-sm: calc(var(--radius) * 0.6);
+
+	--radius-md: calc(var(--radius) * 0.8);
+
+	--radius-lg: var(--radius);
+
+	--radius-xl: calc(var(--radius) * 1.4);
+
+	--radius-2xl: calc(var(--radius) * 1.8);
+
+	--radius-3xl: calc(var(--radius) * 2.2);
+
+	--radius-4xl: calc(var(--radius) * 2.6);
+
 }
-.no-spinner[type='number'] {
-    -moz-appearance: textfield;
-    appearance: textfield;
+
+:root {
+
+	--background: var(--color-neutral5);
+	--home-sky-gradient: radial-gradient(ellipse 145% 74% at 50% 0%, #00aeff 0%, #88d9ff 58%, var(--background) 100%);
+	--trip-sky-gradient: linear-gradient(to bottom, color-mix(in oklch, var(--background) 52%, #00aeff 48%) 0%, color-mix(in oklch, var(--background) 78%, #bfdeff 22%) 58%, transparent 100%);
+	--foreground: var(--color-neutral0);
+	--card: var(--color-neutral5);
+	--card-foreground: var(--color-neutral0);
+	--popover: var(--color-neutral5);
+	--popover-foreground: var(--color-neutral0);
+	--primary: var(--color-neutral0);
+	--primary-foreground: var(--color-neutral5);
+	--secondary: var(--color-neutral4);
+	--secondary-foreground: var(--color-neutral0);
+	--muted: var(--color-neutral4);
+	--muted-foreground: var(--color-neutral1);
+	--accent: var(--color-neutral4);
+	--accent-foreground: var(--color-neutral0);
+	--destructive: var(--color-negative1);
+	--destructive-foreground: var(--color-neutral5);
+	--border: var(--color-neutral3);
+	--input: var(--color-neutral2);
+	--ring: var(--color-neutral0);
+	--success: var(--color-positive1);
+	--success-foreground: var(--color-positive0);
+	--success-subtle: var(--color-positive2);
+	--warning: var(--color-warning1);
+	--warning-foreground: var(--color-warning0);
+	--warning-subtle: var(--color-warning2);
+	--chart-1: var(--color-primary0);
+	--chart-2: var(--color-positive1);
+	--chart-3: var(--color-warning1);
+	--chart-4: var(--color-negative1);
+	--chart-5: var(--color-neutral1);
+
+	--radius: 0.625rem;
+
+	--sidebar: var(--color-neutral4);
+	--sidebar-foreground: var(--color-neutral0);
+	--sidebar-primary: var(--color-neutral0);
+	--sidebar-primary-foreground: var(--color-neutral5);
+	--sidebar-accent: var(--color-neutral3);
+	--sidebar-accent-foreground: var(--color-neutral0);
+	--sidebar-border: var(--color-neutral3);
+	--sidebar-ring: var(--color-primary0);
+
+}
+
+.night-sky-stars {
+	opacity: 0;
+	background-image:
+		radial-gradient(circle at 7% 24%, rgb(255 255 255 / 0.85) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 17% 9%, rgb(221 228 255 / 0.7) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 27% 31%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 38% 14%, rgb(228 222 255 / 0.8) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 48% 26%, rgb(255 255 255 / 0.58) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 59% 8%, rgb(218 231 255 / 0.76) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 69% 30%, rgb(255 255 255 / 0.68) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 78% 15%, rgb(231 224 255 / 0.82) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 88% 28%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 95% 10%, rgb(218 230 255 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 4% 48%, rgb(219 234 254 / 0.65) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 13% 65%, rgb(255 255 255 / 0.7) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 22% 45%, rgb(224 231 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 31% 71%, rgb(255 255 255 / 0.78) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 42% 53%, rgb(219 234 254 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 53% 78%, rgb(255 255 255 / 0.68) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 64% 49%, rgb(224 231 255 / 0.76) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 74% 67%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 84% 50%, rgb(219 234 254 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 92% 73%, rgb(255 255 255 / 0.8) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 3% 83%, rgb(255 255 255 / 0.58) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 10% 38%, rgb(219 234 254 / 0.78) 0 1.1px, transparent 1.8px),
+		radial-gradient(circle at 16% 91%, rgb(255 255 255 / 0.64) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 20% 57%, rgb(224 231 255 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 25% 79%, rgb(255 255 255 / 0.55) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 33% 42%, rgb(219 234 254 / 0.86) 0 1.2px, transparent 1.9px),
+		radial-gradient(circle at 37% 88%, rgb(255 255 255 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 44% 66%, rgb(224 231 255 / 0.74) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 50% 41%, rgb(255 255 255 / 0.58) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 56% 94%, rgb(219 234 254 / 0.8) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 62% 62%, rgb(255 255 255 / 0.66) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 68% 87%, rgb(224 231 255 / 0.88) 0 1.2px, transparent 1.9px),
+		radial-gradient(circle at 72% 43%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 80% 90%, rgb(219 234 254 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 86% 62%, rgb(255 255 255 / 0.82) 0 1.1px, transparent 1.8px),
+		radial-gradient(circle at 90% 41%, rgb(224 231 255 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 97% 88%, rgb(255 255 255 / 0.76) 0 1px, transparent 1.6px);
+	background-size: 100% 22%;
+	background-repeat: no-repeat;
+	transition: opacity 300ms ease;
+}
+
+:root[data-theme='dark'] .night-sky-stars {
+	opacity: 0.72;
+	animation: night-sky-twinkle 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes night-sky-twinkle {
+	from { opacity: 0.48; filter: brightness(0.9); }
+	to { opacity: 0.82; filter: brightness(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root[data-theme='dark'] .night-sky-stars { animation: none; }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+
+	}
+  body {
+    @apply bg-background text-foreground;
+
+	}
+  html {
+    @apply font-sans;
+
+	}
+
+}
+
+@keyframes chat-prompt-in {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-latest-word {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes add-item-form-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes chat-prompt-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@keyframes chat-empty-state-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Landing page */
+html:has(.landing-page) {
+	scroll-behavior: smooth;
+	min-height: 100%;
+	--landing-elastic-background: linear-gradient(180deg, #35c4f4 0%, #fff 40%, #fff 60%, #505761 100%);
+	background-color: #505761;
+	background-image: var(--landing-elastic-background);
+	background-size: 100% 100vh;
+	background-attachment: fixed;
+}
+
+body:has(.landing-page) {
+	position: relative;
+	isolation: isolate;
+	min-height: 100svh;
+	background: transparent;
+}
+
+body:has(.landing-page)::before {
+	position: fixed;
+	z-index: -1;
+	inset: 0;
+	content: '';
+	pointer-events: none;
+	background: var(--landing-elastic-background);
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	html:has(.landing-page) { scroll-behavior: auto; }
+	.landing-page *, .landing-page *::before, .landing-page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

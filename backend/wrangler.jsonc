@@ -1,0 +1,57 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pack-it-backend-dev",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "FIREBASE_PROJECT_ID": "pack-it-app",
+    "FIREBASE_PROJECT_NUMBER": "470724147161",
+    "ALLOWED_ORIGINS": "http://localhost:5200,capacitor://localhost,http://localhost",
+    "ENFORCE_APP_CHECK": "false"
+  },
+  "secrets": {
+    "required": ["OPENAI_API_KEY", "PEXELS_API_KEY", "FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY"]
+  },
+  "ratelimits": [
+    {
+      "name": "AI_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 20, "period": 60 }
+    },
+    {
+      "name": "THUMBNAIL_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": { "limit": 60, "period": 60 }
+    }
+  ],
+  "env": {
+    "production": {
+      "name": "pack-it-backend",
+      "vars": {
+        "FIREBASE_PROJECT_ID": "pack-it-app",
+        "FIREBASE_PROJECT_NUMBER": "470724147161",
+        "ALLOWED_ORIGINS": "capacitor://localhost,http://localhost",
+        "ENFORCE_APP_CHECK": "false"
+      },
+      "secrets": {
+        "required": ["OPENAI_API_KEY", "PEXELS_API_KEY", "FIREBASE_CLIENT_EMAIL", "FIREBASE_PRIVATE_KEY"]
+      },
+      "ratelimits": [
+        {
+          "name": "AI_RATE_LIMITER",
+          "namespace_id": "2001",
+          "simple": { "limit": 20, "period": 60 }
+        },
+        {
+          "name": "THUMBNAIL_RATE_LIMITER",
+          "namespace_id": "2002",
+          "simple": { "limit": 60, "period": 60 }
+        }
+      ]
+    }
+  }
+}

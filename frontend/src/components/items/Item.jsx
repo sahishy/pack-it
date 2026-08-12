@@ -1,7 +1,6 @@
-import Card from '../ui/Card'
+import { Card } from '@/components/ui/card'
 import { FiAlertTriangle, FiEdit, FiEdit2, FiTrash2 } from 'react-icons/fi'
-import { getCategoryEmoji, getResolvedItemDimensionsCm, hasLowItemMetricConfidence } from '../../utils/itemUtils'
-import Checkbox from '../ui/Checkbox'
+import { getResolvedItemDimensionsCm, hasLowItemMetricConfidence } from '../../utils/itemUtils'
 import useWeightFormatter from '../../hooks/useWeightFormatter'
 import { FaXmark } from 'react-icons/fa6'
 
@@ -30,12 +29,17 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
             <div className='flex items-center justify-between'>
                 <div className='flex min-w-0 items-center gap-3'>
 
-                    <Checkbox
-                        checked={Boolean(item.checked)}
-                        onChange={(event) => onToggleChecked(item.id, event.target.checked)}
+                    <button
+                        type='button'
+                        role='checkbox'
+                        aria-checked={Boolean(item.checked)}
+                        onClick={() => onToggleChecked(item.id, !item.checked)}
                         disabled={isBusy}
                         aria-label={`Mark ${item.name} as packed`}
-                    />
+                        className='flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/45 transition-colors hover:border-muted-foreground/70 disabled:opacity-60'
+                    >
+                        <span className={`size-2.5 rounded-full bg-muted-foreground transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${item.checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
+                    </button>
 
                     <div className='flex gap-3 items-center'>
                         <span className='text-3xl' aria-hidden='true'>
@@ -53,7 +57,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
                                 <div className='flex flex-wrap items-center gap-2 text-xs text-neutral1'>
                                     {/* <p className='capitalize'>{item.category}</p> */}
                                     {item.quantity > 1 ? <p className='font-medium'>x{item.quantity}</p> : null}
-                                    <p className='text-primary0 font-medium'>{formatWeight(resolvedWeightKg, { decimals: 2 })}</p>
+                                    <p className='font-semibold'>{formatWeight(resolvedWeightKg, { decimals: 2 })}</p>
                                     <p>{formatDimensions(resolvedDimensionsCm, { decimals: 1 })}</p>
                                     {hasLowConfidenceMetrics ? (
                                         <span className='inline-flex items-center gap-1 rounded-full bg-warning2/20 px-2 py-0.5 text-warning1'>
@@ -73,7 +77,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
                             type='button'
                             onClick={() => onEdit?.(item)}
                             disabled={isBusy}
-                            className='rounded-lg p-2 text-warning1 cursor-pointer transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
+                            className='rounded-lg p-2 text-neutral1 cursor-pointer transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
                             aria-label={`Edit ${item.name} metrics`}
                         >
                             <FiEdit className='text-xl' />
