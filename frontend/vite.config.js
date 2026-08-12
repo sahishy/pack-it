@@ -5,7 +5,7 @@ import path from 'path'
 
 export default defineConfig({
 	base: './',
-	envDir: '..',
+	envDir: '.',
 	server: {
 		port: 5200,
 		strictPort: true,

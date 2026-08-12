@@ -3,7 +3,8 @@ import { FaBoltLightning, FaPlug, FaWaveSquare } from 'react-icons/fa6'
 import { Card } from '@/components/ui/card'
 import Return from '@/components/common/Return'
 import CommandPalette from '@/components/common/CommandPalette'
-import { getPlugCountries, searchPlugCountries } from '../../services/tools/plugGuideService'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
+import { searchPlugCountries } from '../../services/tools/plugGuideService'
 
 import TypeAPlugImage from '../../assets/images/plugs/typeA.jpg'
 import TypeBPlugImage from '../../assets/images/plugs/typeB.jpg'
@@ -101,8 +102,6 @@ const formatUnitList = (values, unit) => {
 }
 
 const PlugGuide = () => {
-    const countries = useMemo(() => getPlugCountries(), [])
-
     const [selectedCountry, setSelectedCountry] = useState(null)
     const [countryQuery, setCountryQuery] = useState('')
     const [isCountryPaletteOpen, setIsCountryPaletteOpen] = useState(false)
@@ -114,10 +113,12 @@ const PlugGuide = () => {
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Plug Guide</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Check plug types, voltage, and frequency for any destination.</p>
-                </div>
+                <ToolPageHeader
+                    title='Plug Guide'
+                    description='Check plug types, voltage, and frequency for any destination.'
+                    icon={FaPlug}
+                    color='#8d5cf6'
+                />
 
                 <Card className='border-none bg-linear-to-r from-[#8d5cf6] to-[#e64aab]'>
                     <div className='flex items-start gap-4'>

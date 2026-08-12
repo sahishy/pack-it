@@ -10,6 +10,12 @@ import {
 const getOptionValue = (option) => typeof option === 'string' ? option : option?.value
 const getOptionLabel = (option) => typeof option === 'string' ? option : option?.label ?? option?.value ?? ''
 const getOptionAlias = (option) => typeof option === 'string' ? '' : option?.alias ?? ''
+const getOptionDisplayText = (option) => {
+    if (!option) return ''
+    const optionLabel = getOptionLabel(option)
+    const optionAlias = getOptionAlias(option)
+    return optionAlias ? `${optionLabel} (${optionAlias})` : optionLabel
+}
 
 const FormSelect = ({
     label,
@@ -26,18 +32,21 @@ const FormSelect = ({
             {label ? <FieldLabel htmlFor={id}>{label}</FieldLabel> : null}
             <Select value={value || null} onValueChange={onChange}>
                 <SelectTrigger id={id} className={`w-full ${className}`}>
-                    <SelectValue placeholder={placeholder} />
+                    <SelectValue placeholder={placeholder}>
+                        {(selectedValue) => {
+                            if (selectedValue == null || selectedValue === '') return placeholder
+                            const selectedOption = options.find((option) => getOptionValue(option) === selectedValue)
+                            return getOptionDisplayText(selectedOption) || String(selectedValue)
+                        }}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent align='start'>
                     {options.map((option) => {
                         const optionValue = getOptionValue(option)
-                        const optionLabel = getOptionLabel(option)
-                        const optionAlias = getOptionAlias(option)
 
                         return (
                             <SelectItem key={optionValue} value={optionValue}>
-                                {optionLabel}
-                                {optionAlias ? ` (${optionAlias})` : ''}
+                                {getOptionDisplayText(option)}
                             </SelectItem>
                         )
                     })}

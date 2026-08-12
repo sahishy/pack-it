@@ -67,30 +67,8 @@ html {
 	--color-warning2: #78350f;
 
 	--color-shadow: rgba(0, 0, 0, 0);
-}
-
-.no-spinner::-webkit-outer-spin-button,
-.no-spinner::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-.no-spinner[type='number'] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-
-.capacitor-safe-area {
-	padding-top: calc(env(safe-area-inset-top) + 1rem);
-	padding-right: calc(env(safe-area-inset-right) + 1.25rem);
-	padding-bottom: calc(env(safe-area-inset-bottom) + 2rem);
-	padding-left: calc(env(safe-area-inset-left) + 1.25rem);
-}
-
-.capacitor-safe-area-landing {
-	padding-top: calc(env(safe-area-inset-top) + 1.5rem);
-	padding-right: calc(env(safe-area-inset-right) + 1.5rem);
-	padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
-	padding-left: calc(env(safe-area-inset-left) + 1.5rem);
+	--home-sky-gradient: radial-gradient(ellipse 145% 78% at 50% 0%, #29427c 0%, #243664 38%, #182341 68%, var(--background) 100%);
+	--trip-sky-gradient: linear-gradient(to bottom, #29427c 0%, #243664 42%, #182341 70%, var(--background) 100%);
 }
 
 @theme inline {
@@ -188,12 +166,14 @@ html {
 :root {
 
 	--background: var(--color-neutral5);
+	--home-sky-gradient: radial-gradient(ellipse 145% 74% at 50% 0%, #00aeff 0%, #88d9ff 58%, var(--background) 100%);
+	--trip-sky-gradient: linear-gradient(to bottom, color-mix(in oklch, var(--background) 52%, #00aeff 48%) 0%, color-mix(in oklch, var(--background) 78%, #bfdeff 22%) 58%, transparent 100%);
 	--foreground: var(--color-neutral0);
 	--card: var(--color-neutral5);
 	--card-foreground: var(--color-neutral0);
 	--popover: var(--color-neutral5);
 	--popover-foreground: var(--color-neutral0);
-	--primary: var(--color-primary0);
+	--primary: var(--color-neutral0);
 	--primary-foreground: var(--color-neutral5);
 	--secondary: var(--color-neutral4);
 	--secondary-foreground: var(--color-neutral0);
@@ -205,7 +185,7 @@ html {
 	--destructive-foreground: var(--color-neutral5);
 	--border: var(--color-neutral3);
 	--input: var(--color-neutral2);
-	--ring: var(--color-primary0);
+	--ring: var(--color-neutral0);
 	--success: var(--color-positive1);
 	--success-foreground: var(--color-positive0);
 	--success-subtle: var(--color-positive2);
@@ -222,13 +202,72 @@ html {
 
 	--sidebar: var(--color-neutral4);
 	--sidebar-foreground: var(--color-neutral0);
-	--sidebar-primary: var(--color-primary0);
+	--sidebar-primary: var(--color-neutral0);
 	--sidebar-primary-foreground: var(--color-neutral5);
 	--sidebar-accent: var(--color-neutral3);
 	--sidebar-accent-foreground: var(--color-neutral0);
 	--sidebar-border: var(--color-neutral3);
 	--sidebar-ring: var(--color-primary0);
 
+}
+
+.night-sky-stars {
+	opacity: 0;
+	background-image:
+		radial-gradient(circle at 7% 24%, rgb(255 255 255 / 0.85) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 17% 9%, rgb(221 228 255 / 0.7) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 27% 31%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 38% 14%, rgb(228 222 255 / 0.8) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 48% 26%, rgb(255 255 255 / 0.58) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 59% 8%, rgb(218 231 255 / 0.76) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 69% 30%, rgb(255 255 255 / 0.68) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 78% 15%, rgb(231 224 255 / 0.82) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 88% 28%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 95% 10%, rgb(218 230 255 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 4% 48%, rgb(219 234 254 / 0.65) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 13% 65%, rgb(255 255 255 / 0.7) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 22% 45%, rgb(224 231 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 31% 71%, rgb(255 255 255 / 0.78) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 42% 53%, rgb(219 234 254 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 53% 78%, rgb(255 255 255 / 0.68) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 64% 49%, rgb(224 231 255 / 0.76) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 74% 67%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 84% 50%, rgb(219 234 254 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 92% 73%, rgb(255 255 255 / 0.8) 0 1px, transparent 1.6px),
+		radial-gradient(circle at 3% 83%, rgb(255 255 255 / 0.58) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 10% 38%, rgb(219 234 254 / 0.78) 0 1.1px, transparent 1.8px),
+		radial-gradient(circle at 16% 91%, rgb(255 255 255 / 0.64) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 20% 57%, rgb(224 231 255 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 25% 79%, rgb(255 255 255 / 0.55) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 33% 42%, rgb(219 234 254 / 0.86) 0 1.2px, transparent 1.9px),
+		radial-gradient(circle at 37% 88%, rgb(255 255 255 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 44% 66%, rgb(224 231 255 / 0.74) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 50% 41%, rgb(255 255 255 / 0.58) 0 0.6px, transparent 1.2px),
+		radial-gradient(circle at 56% 94%, rgb(219 234 254 / 0.8) 0 1px, transparent 1.7px),
+		radial-gradient(circle at 62% 62%, rgb(255 255 255 / 0.66) 0 0.8px, transparent 1.4px),
+		radial-gradient(circle at 68% 87%, rgb(224 231 255 / 0.88) 0 1.2px, transparent 1.9px),
+		radial-gradient(circle at 72% 43%, rgb(255 255 255 / 0.6) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 80% 90%, rgb(219 234 254 / 0.72) 0 0.9px, transparent 1.5px),
+		radial-gradient(circle at 86% 62%, rgb(255 255 255 / 0.82) 0 1.1px, transparent 1.8px),
+		radial-gradient(circle at 90% 41%, rgb(224 231 255 / 0.62) 0 0.7px, transparent 1.3px),
+		radial-gradient(circle at 97% 88%, rgb(255 255 255 / 0.76) 0 1px, transparent 1.6px);
+	background-size: 100% 22%;
+	background-repeat: no-repeat;
+	transition: opacity 300ms ease;
+}
+
+:root[data-theme='dark'] .night-sky-stars {
+	opacity: 0.72;
+	animation: night-sky-twinkle 4.5s ease-in-out infinite alternate;
+}
+
+@keyframes night-sky-twinkle {
+	from { opacity: 0.48; filter: brightness(0.9); }
+	to { opacity: 0.82; filter: brightness(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root[data-theme='dark'] .night-sky-stars { animation: none; }
 }
 
 @layer base {
@@ -258,6 +297,32 @@ html {
   }
 }
 
+@keyframes chat-latest-word {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes add-item-form-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
 @keyframes chat-prompt-out {
   from {
     opacity: 1;
@@ -278,4 +343,37 @@ html {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Landing page */
+html:has(.landing-page) {
+	scroll-behavior: smooth;
+	min-height: 100%;
+	--landing-elastic-background: linear-gradient(180deg, #35c4f4 0%, #fff 40%, #fff 60%, #505761 100%);
+	background-color: #505761;
+	background-image: var(--landing-elastic-background);
+	background-size: 100% 100vh;
+	background-attachment: fixed;
+}
+
+body:has(.landing-page) {
+	position: relative;
+	isolation: isolate;
+	min-height: 100svh;
+	background: transparent;
+}
+
+body:has(.landing-page)::before {
+	position: fixed;
+	z-index: -1;
+	inset: 0;
+	content: '';
+	pointer-events: none;
+	background: var(--landing-elastic-background);
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+	html:has(.landing-page) { scroll-behavior: auto; }
+	.landing-page *, .landing-page *::before, .landing-page *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

@@ -63,7 +63,7 @@ const DateRangeSelector = ({
                         <Button
                             id={id}
                             variant='outline'
-                            className='w-full justify-start text-left font-normal'
+                            className='w-full justify-start rounded-lg! text-left font-normal'
                         />
                     )}
                 >

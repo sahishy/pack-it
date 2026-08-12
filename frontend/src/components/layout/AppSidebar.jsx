@@ -1,11 +1,9 @@
-import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { BadgeCheck, ChevronsUpDown, LogOut, Settings } from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { FaHouse, FaSuitcaseRolling, FaWrench } from 'react-icons/fa6'
 import { useAuth } from '@/contexts/AuthContext'
 import LogoLarge from '@/assets/logo_lg.png'
 import LogoSmall from '@/assets/logo_sm.png'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarRail, useSidebar } from '@/components/ui/sidebar'
 
 const navigation = [
@@ -14,12 +12,15 @@ const navigation = [
     { label: 'Tools', href: '/tools', icon: FaWrench },
 ]
 
-const AppSidebar = ({ displayName, email, onLogout }) => {
+const AppSidebar = ({ displayName, email }) => {
     const location = useLocation()
-    const navigate = useNavigate()
     const { profile } = useAuth()
     const { isMobile, setOpenMobile } = useSidebar()
-    const initials = `${profile?.firstName?.[0] ?? ''}${profile?.lastName?.[0] ?? ''}`.toUpperCase() || '?'
+    const nameParts = displayName?.trim?.().split(/\s+/).filter(Boolean) ?? []
+    const displayNameInitials = nameParts.length > 1
+        ? `${nameParts[0][0]}${nameParts.at(-1)[0]}`
+        : nameParts[0]?.slice(0, 2)
+    const initials = (`${profile?.firstName?.[0] ?? ''}${profile?.lastName?.[0] ?? ''}` || displayNameInitials || 'TR').toUpperCase()
     const profilePictureUrl = profile?.profilePictureUrl?.trim?.() ?? ''
     const closeMobile = () => { if (isMobile) setOpenMobile(false) }
 
@@ -58,31 +59,22 @@ const AppSidebar = ({ displayName, email, onLogout }) => {
             <SidebarFooter className='p-4'>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger render={<SidebarMenuButton size='lg' className='data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground' />}>
-                                <Avatar className='size-8 rounded-lg'>
-                                    <AvatarImage src={profilePictureUrl || undefined} alt={displayName || 'User'} />
-                                    <AvatarFallback className='rounded-lg'>{initials}</AvatarFallback>
-                                </Avatar>
-                                <div className='grid flex-1 text-left text-sm leading-tight'><span className='truncate font-medium'>{displayName || 'Traveler'}</span><span className='truncate text-xs text-muted-foreground'>{email}</span></div>
-                                <ChevronsUpDown className='ml-auto size-4' />
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className='min-w-56 rounded-lg' side={isMobile ? 'bottom' : 'right'} align='end' sideOffset={4}>
-                                <DropdownMenuGroup>
-                                    <DropdownMenuLabel className='p-0 font-normal'>
-                                        <div className='flex items-center gap-2 px-2 py-2 text-left text-sm'>
-                                            <Avatar className='size-8 rounded-lg'><AvatarImage src={profilePictureUrl || undefined} alt={displayName || 'User'} /><AvatarFallback className='rounded-lg'>{initials}</AvatarFallback></Avatar>
-                                            <div className='grid flex-1 leading-tight'><span className='truncate font-medium'>{displayName || 'Traveler'}</span><span className='truncate text-xs text-muted-foreground'>{email}</span></div>
-                                        </div>
-                                    </DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => { closeMobile(); navigate('/settings') }}><BadgeCheck /> Account</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => { closeMobile(); navigate('/settings') }}><Settings /> Settings</DropdownMenuItem>
-                                </DropdownMenuGroup>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => onLogout?.()}><LogOut /> Log out</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <SidebarMenuButton
+                            size='lg'
+                            isActive={location.pathname === '/settings'}
+                            tooltip='Settings'
+                            className='h-12 gap-3 rounded-xl px-2.5 data-active:bg-sidebar-accent data-active:text-sidebar-accent-foreground'
+                            render={<NavLink to='/settings' onClick={closeMobile} />}
+                        >
+                            <Avatar className='size-8 rounded-lg'>
+                                <AvatarImage className='rounded-lg' src={profilePictureUrl || undefined} alt={displayName || 'User'} />
+                                <AvatarFallback className='rounded-lg bg-primary/8 font-medium text-primary'>{initials}</AvatarFallback>
+                            </Avatar>
+                            <div className='grid flex-1 text-left text-sm leading-tight'>
+                                <span className='truncate font-medium'>{displayName || 'Traveler'}</span>
+                                <span className='truncate text-xs text-muted-foreground'>{email}</span>
+                            </div>
+                        </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

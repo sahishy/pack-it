@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowUp, CalendarDays, Camera, Mic, PackageOpen, Pencil, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Capacitor } from '@capacitor/core'
+import { AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, CalendarDays, Camera, CheckCircle2, LoaderCircle, Mic, PackageOpen, Pencil, Plus, Trash2 } from 'lucide-react'
 import { FaSuitcaseRolling } from 'react-icons/fa6'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
+import { Marker, MarkerContent, MarkerIcon } from '@/components/ui/marker'
+import { Message, MessageContent } from '@/components/ui/message'
+import ChatMarkdown from '@/components/chat/ChatMarkdown'
 import { RadialProgress } from '@/components/ui/chart'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import Item from '../components/items/Item'
 import ItemGhost from '../components/ghost/ItemGhost'
@@ -21,8 +26,8 @@ import { useTrips } from '../contexts/TripsContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import { useTripPlan } from '../contexts/PlansContext'
 import { useSuitcases } from '../contexts/SuitcasesContext'
-import { removeItem, removeTripItems, updateItemChecked, updateItemManualMetrics } from '../services/itemService'
-import { deleteTripPlan } from '../services/planService'
+import { removeItem, updateItemChecked, updateItemManualMetrics } from '../services/itemService'
+import { sendChatMessage, subscribeToTripChatMessages } from '../services/chatService'
 import { getTripById, getTripThumbnail } from '../utils/tripUtils'
 import { getAirlineDisplayById } from '../utils/airlineUtils'
 import { formatDisplayDate } from '../utils/formatters'
@@ -49,6 +54,8 @@ const EMPTY_CHAT_PROMPTS = [
     'Review my packing list',
 ]
 
+const DELETE_CONFIRMATION_DELAY_MS = 3000
+
 const TripOverview = () => {
     const navigate = useNavigate()
     const { tripId } = useParams()
@@ -68,12 +75,63 @@ const TripOverview = () => {
     const [editError, setEditError] = useState(null)
     const [actionError, setActionError] = useState(null)
     const [showNoSuitcaseModal, setShowNoSuitcaseModal] = useState(false)
+    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+    const [deleteUnlockProgress, setDeleteUnlockProgress] = useState(0)
     const [showOverview, setShowOverview] = useState(false)
     const [activeSuitcaseIndex, setActiveSuitcaseIndex] = useState(0)
     const [chatDraft, setChatDraft] = useState('')
+    const [chatMessages, setChatMessages] = useState([])
+    const [chatLoading, setChatLoading] = useState(true)
+    const [chatSending, setChatSending] = useState(false)
+    const [chatError, setChatError] = useState(null)
+    const [revealingMessageId, setRevealingMessageId] = useState(null)
+    const [showScrollToLatest, setShowScrollToLatest] = useState(false)
+    const [showChatScrollbar, setShowChatScrollbar] = useState(false)
     const [hasSentMessage, setHasSentMessage] = useState(false)
     const [promptIndex, setPromptIndex] = useState(0)
     const [outgoingPromptIndex, setOutgoingPromptIndex] = useState(null)
+    const seenChatMessageIdsRef = useRef(new Set())
+    const initializedChatTripRef = useRef(null)
+    const chatViewportRef = useRef(null)
+    const chatWasNearBottomRef = useRef(true)
+    const shouldScrollChatToBottomRef = useRef(true)
+    const hideChatScrollbarTimeoutRef = useRef(null)
+    const suppressNextChatScrollbarRef = useRef(false)
+    const optimisticChatMessagesRef = useRef(new Map())
+    const weightCardTouchStartRef = useRef(null)
+    const didSwipeWeightCardRef = useRef(false)
+    const isNativePlatform = Capacitor.isNativePlatform()
+
+    const updateChatScrollPosition = () => {
+        const viewport = chatViewportRef.current
+        if (!viewport) return
+
+        const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight
+        const isNearBottom = distanceFromBottom <= 64
+        chatWasNearBottomRef.current = isNearBottom
+        setShowScrollToLatest(!isNearBottom)
+
+        if (suppressNextChatScrollbarRef.current) {
+            suppressNextChatScrollbarRef.current = false
+            return
+        }
+
+        setShowChatScrollbar(true)
+        window.clearTimeout(hideChatScrollbarTimeoutRef.current)
+        hideChatScrollbarTimeoutRef.current = window.setTimeout(() => {
+            setShowChatScrollbar(false)
+        }, 700)
+    }
+
+    const scrollChatToBottom = (behavior = 'smooth') => {
+        const viewport = chatViewportRef.current
+        if (!viewport) return
+
+        if (behavior === 'auto') suppressNextChatScrollbarRef.current = true
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior })
+        chatWasNearBottomRef.current = true
+        setShowScrollToLatest(false)
+    }
 
     useEffect(() => {
         if (hasSentMessage) return undefined
@@ -93,8 +151,71 @@ const TripOverview = () => {
         return () => window.clearTimeout(timeout)
     }, [outgoingPromptIndex])
 
+    useEffect(() => () => {
+        window.clearTimeout(hideChatScrollbarTimeoutRef.current)
+    }, [])
+
+    useEffect(() => {
+        if (!showDeleteConfirmation) return undefined
+
+        const startedAt = performance.now()
+        let animationFrame
+
+        const updateDeleteCooldown = (now) => {
+            const progress = Math.min(((now - startedAt) / DELETE_CONFIRMATION_DELAY_MS) * 100, 100)
+            setDeleteUnlockProgress(progress)
+            if (progress < 100) animationFrame = window.requestAnimationFrame(updateDeleteCooldown)
+        }
+
+        animationFrame = window.requestAnimationFrame(updateDeleteCooldown)
+        return () => window.cancelAnimationFrame(animationFrame)
+    }, [showDeleteConfirmation])
+
+    useEffect(() => {
+        optimisticChatMessagesRef.current.clear()
+    }, [tripId])
+
+    useEffect(() => {
+        return subscribeToTripChatMessages(user?.uid, tripId, (messages) => {
+            const isInitialSnapshot = initializedChatTripRef.current !== tripId
+            const newAssistantMessage = isInitialSnapshot
+                ? null
+                : messages.find((message) => message.role === 'assistant' && !seenChatMessageIdsRef.current.has(message.id))
+
+            initializedChatTripRef.current = tripId
+            shouldScrollChatToBottomRef.current = isInitialSnapshot || chatWasNearBottomRef.current
+            const savedMessageIds = new Set(messages.map(({ id }) => id))
+            savedMessageIds.forEach((id) => optimisticChatMessagesRef.current.delete(id))
+            const optimisticMessages = [...optimisticChatMessagesRef.current.values()]
+                .filter((optimisticMessage) => optimisticMessage.tripId === tripId && !savedMessageIds.has(optimisticMessage.id))
+            const mergedMessages = [...messages, ...optimisticMessages]
+
+            seenChatMessageIdsRef.current = new Set(mergedMessages.map(({ id }) => id))
+            setChatMessages(mergedMessages)
+            setChatLoading(false)
+            setRevealingMessageId(newAssistantMessage?.id ?? null)
+            if (messages.length) setHasSentMessage(true)
+        }, (errorValue) => {
+            setChatError(errorValue)
+            setChatLoading(false)
+        })
+    }, [tripId, user?.uid])
+
+    useLayoutEffect(() => {
+        if (chatLoading || !shouldScrollChatToBottomRef.current) return undefined
+
+        const frame = window.requestAnimationFrame(() => {
+            scrollChatToBottom('auto')
+            shouldScrollChatToBottomRef.current = false
+        })
+
+        return () => window.cancelAnimationFrame(frame)
+    }, [chatLoading, chatMessages.length, chatSending, tripId])
+
     const trip = useMemo(() => getTripById(trips, tripId), [trips, tripId])
-    const totalWeight = useMemo(() => getTotalWeight(items), [items])
+    const tripDisplayName = (trip?.name?.trim() || trip?.destination?.trim() || 'your trip')
+        .split(',')[0]
+        .trim()
     const orderedItems = useMemo(
         () => [...items].sort((a, b) => getCreatedAtMs(a) - getCreatedAtMs(b)),
         [items],
@@ -133,10 +254,12 @@ const TripOverview = () => {
         ? `${formattedStartDate} – ${formattedEndDate}`
         : trip.startDate ? `Starts ${formattedStartDate}` : trip.endDate ? `Ends ${formattedEndDate}` : 'Dates not set'
     const baggageLimit = Number(trip.baggageLimit ?? 0)
-    const weightProgress = baggageLimit > 0 ? Math.min((totalWeight / baggageLimit) * 100, 100) : 0
-    const weightRemaining = Math.max(baggageLimit - totalWeight, 0)
     const resolvedSuitcaseIndex = Math.min(activeSuitcaseIndex, Math.max(suitcases.length - 1, 0))
     const activeSuitcase = suitcases[resolvedSuitcaseIndex]
+    const activeSuitcaseItems = suitcaseGroups[resolvedSuitcaseIndex]?.items ?? orderedItems
+    const activeSuitcaseWeight = getTotalWeight(activeSuitcaseItems)
+    const activeWeightProgress = baggageLimit > 0 ? Math.min((activeSuitcaseWeight / baggageLimit) * 100, 100) : 0
+    const activeWeightRemaining = Math.max(baggageLimit - activeSuitcaseWeight, 0)
     const hasFailedWeight = items.some((item) => item?.weight?.success === false)
     const airlineName = getAirlineDisplayById(trip.airline)?.name
 
@@ -160,8 +283,7 @@ const TripOverview = () => {
         try {
             setActionError(null)
             setDeletingItemIds((previous) => new Set(previous).add(itemId))
-            await removeItem(itemId)
-            await deleteTripPlan(user.uid, tripId)
+            await removeItem(user.uid, tripId, itemId)
         } catch (errorValue) {
             setActionError(errorValue)
         } finally {
@@ -176,8 +298,6 @@ const TripOverview = () => {
     const handleDeleteTrip = async () => {
         try {
             setActionError(null)
-            await removeTripItems(user.uid, tripId)
-            await deleteTripPlan(user.uid, tripId)
             await removeTrip(tripId)
             navigate('/home', { replace: true })
         } catch (errorValue) {
@@ -185,13 +305,56 @@ const TripOverview = () => {
         }
     }
 
+    const handleOpenDeleteConfirmation = () => {
+        setActionError(null)
+        setDeleteUnlockProgress(0)
+        setShowDeleteConfirmation(true)
+    }
+
+    const handleWeightCardTouchStart = (event) => {
+        const touch = event.touches[0]
+        if (!touch) return
+
+        didSwipeWeightCardRef.current = false
+        weightCardTouchStartRef.current = { x: touch.clientX, y: touch.clientY }
+    }
+
+    const handleWeightCardTouchEnd = (event) => {
+        const start = weightCardTouchStartRef.current
+        const touch = event.changedTouches[0]
+        weightCardTouchStartRef.current = null
+
+        if (!start || !touch || suitcases.length <= 1) return
+
+        const horizontalDistance = touch.clientX - start.x
+        const verticalDistance = touch.clientY - start.y
+        const isHorizontalSwipe = Math.abs(horizontalDistance) >= 40
+            && Math.abs(horizontalDistance) > Math.abs(verticalDistance) * 1.25
+
+        if (!isHorizontalSwipe) return
+
+        didSwipeWeightCardRef.current = true
+        setActiveSuitcaseIndex((currentIndex) => horizontalDistance < 0
+            ? (currentIndex + 1) % suitcases.length
+            : (currentIndex - 1 + suitcases.length) % suitcases.length)
+
+        window.setTimeout(() => {
+            didSwipeWeightCardRef.current = false
+        }, 0)
+    }
+
+    const handleWeightCardClickCapture = (event) => {
+        if (!didSwipeWeightCardRef.current) return
+        event.preventDefault()
+        event.stopPropagation()
+    }
+
     const handleSaveItemMetrics = async (payload) => {
         if (!editingItem?.id) return
         try {
             setSavingEdit(true)
             setEditError(null)
-            await updateItemManualMetrics(editingItem.id, payload)
-            await deleteTripPlan(user.uid, tripId)
+            await updateItemManualMetrics(user.uid, tripId, editingItem.id, payload)
             setEditingItem(null)
         } catch (errorValue) {
             setEditError(errorValue)
@@ -213,10 +376,64 @@ const TripOverview = () => {
         setShowAddForm(true)
     }
 
-    const handleSendMessage = () => {
-        if (!chatDraft.trim()) return
+    const handleSendMessage = async () => {
+        const message = chatDraft.trim()
+        if (!message || chatSending) return
+
+        const messageId = crypto.randomUUID()
+        const optimisticUserMessage = {
+            id: messageId,
+            userId: user.uid,
+            tripId,
+            role: 'user',
+            content: message,
+            actions: [],
+            createdAt: new Date(),
+            optimistic: true,
+        }
+
         setHasSentMessage(true)
         setChatDraft('')
+        setChatError(null)
+        setChatSending(true)
+        shouldScrollChatToBottomRef.current = true
+        optimisticChatMessagesRef.current.set(messageId, optimisticUserMessage)
+        seenChatMessageIdsRef.current.add(messageId)
+        setChatMessages((currentMessages) => [...currentMessages, optimisticUserMessage])
+
+        try {
+            const response = await sendChatMessage({ tripId, messageId, message })
+            const assistantMessageId = `${messageId}_assistant`
+            const optimisticAssistantMessage = {
+                id: assistantMessageId,
+                userId: user.uid,
+                tripId,
+                role: 'assistant',
+                content: response.message,
+                actions: response.actions ?? [],
+                createdAt: new Date(),
+                optimistic: true,
+            }
+
+            optimisticChatMessagesRef.current.set(assistantMessageId, optimisticAssistantMessage)
+            seenChatMessageIdsRef.current.add(assistantMessageId)
+            shouldScrollChatToBottomRef.current = chatWasNearBottomRef.current
+            setChatMessages((currentMessages) => currentMessages.some(({ id }) => id === assistantMessageId)
+                ? currentMessages
+                : [...currentMessages, optimisticAssistantMessage])
+            setRevealingMessageId(assistantMessageId)
+        } catch (errorValue) {
+            setChatError(errorValue)
+        } finally {
+            setChatSending(false)
+        }
+    }
+
+    const handleChatKeyDown = (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            void handleSendMessage()
+        }
     }
 
     const chatComposer = (
@@ -224,9 +441,16 @@ const TripOverview = () => {
             <div className='mb-4 flex justify-center md:hidden'>
                 <Button size='sm' className='rounded-full shadow-sm' onClick={() => setShowOverview(true)}>Overview</Button>
             </div>
+            {showScrollToLatest ? (
+                <div className='mb-3 flex justify-center'>
+                    <Button variant='outline' size='icon-sm' className='bg-background shadow-sm' aria-label='Scroll to latest message' onClick={() => scrollChatToBottom()}>
+                        <ArrowDown className='size-4' />
+                    </Button>
+                </div>
+            ) : null}
             <div className='flex flex-col gap-1 p-2 bg-neutral4 rounded-xl'>
                 <div className='relative'>
-                    <Textarea value={chatDraft} onChange={(event) => setChatDraft(event.target.value)} placeholder={hasSentMessage ? 'Message Pack-It' : ''} className='min-h-8 resize-none border-0 bg-transparent! px-2 py-2 shadow-none focus-visible:ring-0' />
+                    <Textarea value={chatDraft} onChange={(event) => setChatDraft(event.target.value)} onKeyDown={handleChatKeyDown} placeholder={hasSentMessage ? 'Message Pack-It' : ''} rows={1} maxLength={2000} disabled={chatSending} className='max-h-32 min-h-8 resize-none border-0 bg-transparent! px-2 py-2 shadow-none focus-visible:ring-0' />
                     {!hasSentMessage && !chatDraft ? (
                         <div aria-hidden='true' className='pointer-events-none absolute inset-x-2 top-2 h-6 overflow-hidden text-sm leading-6 text-muted-foreground'>
                             {outgoingPromptIndex !== null ? <span className='absolute inset-x-0 animate-[chat-prompt-out_280ms_ease-in_forwards] motion-reduce:animate-none'>{EMPTY_CHAT_PROMPTS[outgoingPromptIndex]}</span> : null}
@@ -235,10 +459,10 @@ const TripOverview = () => {
                     ) : null}
                 </div>
                 <div className='flex items-center justify-between px-1'>
-                    <Button variant='ghost' size='icon' className='shrink-0' aria-label='Add photo'><Camera className='size-5' /></Button>
+                    <Button variant='ghost' size='icon' className='shrink-0' aria-label='Photo messages are coming soon' disabled><Camera className='size-5' /></Button>
                     <div className='flex items-center gap-1'>
-                        <Button variant='ghost' size='icon' className='shrink-0' aria-label='Use microphone'><Mic className='size-5' /></Button>
-                        <Button size='icon' className='shrink-0 size-8' aria-label='Send message' onClick={handleSendMessage} disabled={!chatDraft.trim()}><ArrowUp className='size-4' /></Button>
+                        <Button variant='ghost' size='icon' className='shrink-0' aria-label='Voice messages are coming soon' disabled><Mic className='size-5' /></Button>
+                        <Button size='icon' className='shrink-0 size-8' aria-label='Send message' onClick={() => void handleSendMessage()} disabled={!chatDraft.trim() || chatSending}><ArrowUp className='size-4' /></Button>
                     </div>
                 </div>
             </div>
@@ -247,13 +471,65 @@ const TripOverview = () => {
 
     const chatPanel = (
         <section className='relative flex h-full min-h-0 flex-col bg-background'>
-            <ScrollArea className='min-h-0 flex-1'>
-                <div className='mx-auto flex min-h-full max-w-2xl -translate-y-8 flex-col items-center justify-center px-6 py-28 text-center sm:px-8 sm:py-32'>
-                    <img src={PackItMark} alt='Pack-It' className='size-12 animate-[chat-empty-state-in_500ms_ease-out_both] object-contain motion-reduce:animate-none' />
-                    <h2 className='mt-5 animate-[chat-empty-state-in_500ms_ease-out_80ms_both] text-xl font-semibold tracking-tight motion-reduce:animate-none'>What would you like to pack for {trip.destination}?</h2>
-                    <p className='mt-2 max-w-md animate-[chat-empty-state-in_500ms_ease-out_160ms_both] text-sm leading-6 text-muted-foreground motion-reduce:animate-none'>Tell Pack-It what you have in mind, and it can help turn your ideas into a thoughtful packing list.</p>
-                </div>
+            <ScrollArea
+                className='min-h-0 flex-1'
+                viewportRef={chatViewportRef}
+                onViewportScroll={updateChatScrollPosition}
+                scrollbarClassName={`transition-opacity duration-200 ${showChatScrollbar ? 'opacity-100' : 'opacity-0'}`}
+            >
+                {chatMessages.length === 0 && !chatSending && !chatLoading && !chatError ? (
+                    <div className='mx-auto flex min-h-full max-w-2xl -translate-y-8 flex-col items-center justify-center px-6 py-28 text-center sm:px-8 sm:py-32'>
+                        <img src={PackItMark} alt='Pack-It' className='size-12 animate-[chat-empty-state-in_500ms_ease-out_both] object-contain motion-reduce:animate-none' />
+                        <h2 className='mt-5 animate-[chat-empty-state-in_500ms_ease-out_80ms_both] text-xl font-semibold tracking-tight motion-reduce:animate-none'>What would you like to pack for {tripDisplayName}?</h2>
+                        <p className='mt-2 max-w-md animate-[chat-empty-state-in_500ms_ease-out_160ms_both] text-sm leading-6 text-muted-foreground motion-reduce:animate-none'>Ask a travel question or tell Pack-It what to add to your packing list.</p>
+                    </div>
+                ) : (
+                    <div className='mx-auto flex max-w-2xl flex-col gap-6 px-4 pb-48 pt-32 sm:px-6'>
+                        {chatMessages.map((entry) => (
+                            <div key={entry.id} className='space-y-3'>
+                                <Message align={entry.role === 'user' ? 'end' : 'start'}>
+                                    <MessageContent className={entry.role === 'user' ? 'w-fit! max-w-[85%] flex-none' : 'w-fit! max-w-[90%] flex-none'}>
+                                        <div className={entry.role === 'user'
+                                            ? 'rounded-2xl rounded-br-md bg-foreground px-4 py-2.5 text-background'
+                                            : 'rounded-2xl rounded-bl-md bg-muted px-4 py-2.5 text-foreground'}>
+                                            {entry.role === 'assistant' ? (
+                                                <ChatMarkdown content={entry.content} animate={entry.id === revealingMessageId} />
+                                            ) : (
+                                                <p className='whitespace-pre-wrap leading-6'>{entry.content}</p>
+                                            )}
+                                        </div>
+                                    </MessageContent>
+                                </Message>
+                                {(entry.actions ?? []).map((action) => (
+                                    <Marker key={`${entry.id}-${action.itemId}`} role='status' className='py-2'>
+                                        <MarkerIcon><CheckCircle2 /></MarkerIcon>
+                                        <MarkerContent>{action.label}</MarkerContent>
+                                    </Marker>
+                                ))}
+                            </div>
+                        ))}
+                        {chatSending ? (
+                            <Marker role='status' className='py-2'>
+                                <MarkerIcon><LoaderCircle className='animate-spin' /></MarkerIcon>
+                                <MarkerContent>Thinking…</MarkerContent>
+                            </Marker>
+                        ) : null}
+                        {chatLoading ? (
+                            <Marker role='status' className='py-2'>
+                                <MarkerIcon><LoaderCircle className='animate-spin' /></MarkerIcon>
+                                <MarkerContent>Loading conversation…</MarkerContent>
+                            </Marker>
+                        ) : null}
+                        {chatError ? (
+                            <Marker role='status' className='py-2'>
+                                <MarkerIcon><AlertCircle /></MarkerIcon>
+                                <MarkerContent>{chatError.message || 'Pack-It could not respond. Try again.'}</MarkerContent>
+                            </Marker>
+                        ) : null}
+                    </div>
+                )}
             </ScrollArea>
+            <div aria-hidden='true' className='pointer-events-none absolute inset-x-0 bottom-0 z-[5] h-[calc(1rem+env(safe-area-inset-bottom))] bg-background sm:h-4' />
             {chatComposer}
         </section>
     )
@@ -261,7 +537,7 @@ const TripOverview = () => {
     const overviewPanel = (
         <section className='relative flex h-full min-h-0 flex-col bg-muted/20'>
             <ScrollArea className='min-h-0 flex-1'>
-                <div className='min-h-full p-4 pb-44 pt-28 sm:p-6 sm:pb-44 sm:pt-32'>
+                <div className='min-h-full p-4 pb-64 pt-28 sm:p-6 sm:pb-64 sm:pt-32'>
                     {actionError || deleteError ? <p className='text-sm text-destructive'>{(actionError || deleteError)?.message}</p> : null}
                     {itemsLoading ? (
                         <div className='space-y-3'><ItemGhost /><ItemGhost /><ItemGhost /></div>
@@ -313,12 +589,13 @@ const TripOverview = () => {
                         </div>
                     ) : (
                         <div>
-                            <div className='mb-3 flex justify-end'>
+                            <div className='mb-3 flex items-center justify-between gap-3'>
+                                <h2 className='text-sm font-medium text-muted-foreground'>Items</h2>
                                 <Button size='icon' className='size-7' aria-label='Add item' onClick={() => handleOpenAddItem()}>
                                     <Plus className='size-3.5' />
                                 </Button>
                             </div>
-                            <div className='space-y-2'>
+                            <div className='ml-2 space-y-2 border-l pl-5'>
                                 {orderedItems.map((item) => (
                                     <Item key={item.id} item={item} onToggleChecked={handleToggleChecked} onDelete={handleDeleteItem} onEdit={setEditingItem} isUpdating={updatingItemIds.has(item.id)} isDeleting={deletingItemIds.has(item.id)} />
                                 ))}
@@ -329,48 +606,89 @@ const TripOverview = () => {
                 </div>
             </ScrollArea>
 
-            <Card className='absolute inset-x-5 bottom-8 z-10 mx-auto w-auto max-w-md gap-0 rounded-2xl border border-white/70 bg-background/95 p-0 shadow-[0_14px_36px_rgba(31,41,55,0.12),0_3px_10px_rgba(31,41,55,0.06)] ring-1 ring-foreground/5 backdrop-blur-md sm:inset-x-8 sm:bottom-10'>
-                <CardContent className='space-y-3 px-5 py-4 sm:px-6'>
-                    <div className='flex items-center justify-between gap-5'>
-                        <div className='min-w-0'>
-                            <p className='truncate font-semibold'>{activeSuitcase?.name || 'Any suitcase'}</p>
-                            <p className='mt-0.5 text-xs text-muted-foreground'>{items.length} {items.length === 1 ? 'item' : 'items'}</p>
-                        </div>
-                        <div className='flex shrink-0 items-center gap-3'>
-                            <div className='text-right'>
-                                <p className='font-semibold tabular-nums'>{baggageLimit > 0 ? `${formatWeight(totalWeight, { decimals: 1 })} / ${formatWeight(baggageLimit, { decimals: 1 })}` : formatWeight(totalWeight, { decimals: 1 })}</p>
-                                {baggageLimit > 0 ? <p className='mt-0.5 text-xs text-muted-foreground'>{formatWeight(weightRemaining, { decimals: 1 })} left</p> : null}
+            <div className='absolute inset-x-5 bottom-8 z-10 mx-auto w-auto max-w-md sm:inset-x-8 sm:bottom-10'>
+                <Card
+                    className='min-w-0 flex-1 gap-0 rounded-2xl bg-background/95 p-0 shadow-[0_14px_36px_rgba(31,41,55,0.12),0_3px_10px_rgba(31,41,55,0.06)] ring-0 backdrop-blur-md'
+                    style={isNativePlatform ? { touchAction: 'pan-y' } : undefined}
+                    onTouchStart={isNativePlatform ? handleWeightCardTouchStart : undefined}
+                    onTouchEnd={isNativePlatform ? handleWeightCardTouchEnd : undefined}
+                    onTouchCancel={isNativePlatform ? () => { weightCardTouchStartRef.current = null } : undefined}
+                    onClickCapture={isNativePlatform ? handleWeightCardClickCapture : undefined}
+                >
+                    <CardContent className='space-y-3 px-5 py-4 sm:px-6'>
+                        <div className='flex items-center justify-between gap-5'>
+                            <div className='min-w-0'>
+                                <p className='truncate font-semibold'>{activeSuitcase?.name || 'Any suitcase'}</p>
+                                <p className='mt-0.5 text-xs text-muted-foreground'>{activeSuitcaseItems.length} {activeSuitcaseItems.length === 1 ? 'item' : 'items'}</p>
                             </div>
-                            <RadialProgress value={weightProgress} label='Baggage capacity' />
+                            <div className='flex shrink-0 items-center gap-3'>
+                                <div className='text-right'>
+                                    <p className='font-semibold tabular-nums'>{baggageLimit > 0 ? `${formatWeight(activeSuitcaseWeight, { decimals: 1 })} / ${formatWeight(baggageLimit, { decimals: 1 })}` : formatWeight(activeSuitcaseWeight, { decimals: 1 })}</p>
+                                    {baggageLimit > 0 ? <p className='mt-0.5 text-xs text-muted-foreground'>{formatWeight(activeWeightRemaining, { decimals: 1 })} left</p> : null}
+                                </div>
+                                <RadialProgress value={activeWeightProgress} label='Baggage capacity' />
+                            </div>
                         </div>
-                    </div>
-                    {suitcases.length > 1 ? (
-                        <div className='flex justify-center gap-2' role='tablist' aria-label='Suitcases'>
-                            {suitcases.map((suitcase, index) => (
-                                <button
-                                    key={suitcase.id}
-                                    type='button'
-                                    role='tab'
-                                    aria-label={`Show ${suitcase.name || `suitcase ${index + 1}`}`}
-                                    aria-selected={index === resolvedSuitcaseIndex}
-                                    onClick={() => setActiveSuitcaseIndex(index)}
-                                    className={`size-2 rounded-full transition-colors ${index === resolvedSuitcaseIndex ? 'bg-neutral0' : 'bg-neutral2 hover:bg-neutral1'}`}
-                                />
-                            ))}
+                        {suitcases.length > 1 ? (
+                            <div className='flex justify-center gap-1.5' role='tablist' aria-label='Suitcases'>
+                                {suitcases.map((suitcase, index) => (
+                                    <button
+                                        key={suitcase.id}
+                                        type='button'
+                                        role='tab'
+                                        aria-label={`Show ${suitcase.name || `suitcase ${index + 1}`}`}
+                                        aria-selected={index === resolvedSuitcaseIndex}
+                                        onClick={() => setActiveSuitcaseIndex(index)}
+                                        className={`size-1.5 rounded-full transition-colors ${index === resolvedSuitcaseIndex ? 'bg-neutral0' : 'bg-neutral2 hover:bg-neutral1'}`}
+                                    />
+                                ))}
+                            </div>
+                        ) : null}
+                        <div className={`grid gap-2 ${suitcases.length <= 1 ? 'grid-cols-1' : 'grid-cols-[15fr_15fr_70fr]'}`} role='group' aria-label='Packing plan controls'>
+                            {suitcases.length > 1 ? (
+                                <>
+                                    <Button
+                                        variant='secondary'
+                                        className='min-w-0 rounded-2xl! px-0'
+                                        aria-label='Show previous suitcase'
+                                        onClick={() => setActiveSuitcaseIndex((currentIndex) => (currentIndex - 1 + suitcases.length) % suitcases.length)}
+                                        disabled={suitcases.length <= 1}
+                                    >
+                                        <ArrowLeft />
+                                    </Button>
+                                    <Button
+                                        variant='secondary'
+                                        className='min-w-0 rounded-2xl! px-0'
+                                        aria-label='Show next suitcase'
+                                        onClick={() => setActiveSuitcaseIndex((currentIndex) => (currentIndex + 1) % suitcases.length)}
+                                        disabled={suitcases.length <= 1}
+                                    >
+                                        <ArrowRight />
+                                    </Button>
+                                </>
+                            ) : null}
+                            <Button
+                                className='w-full min-w-0 rounded-2xl!'
+                                onClick={handleOpenPlanOverview}
+                                disabled={items.length === 0 || hasFailedWeight || planLoading}
+                            >
+                                {plan ? 'View plan' : 'Generate plan'}
+                            </Button>
                         </div>
-                    ) : null}
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
         </section>
     )
 
     return (
         <main className='relative flex h-full min-h-0 flex-col overflow-hidden'>
-            <header className='absolute inset-x-0 top-0 z-20 flex h-[calc(7rem+env(safe-area-inset-top))] items-start justify-center pt-[calc(0.375rem+env(safe-area-inset-top))] sm:h-28 sm:pt-3' style={{ backgroundImage: 'linear-gradient(to bottom, color-mix(in oklch, var(--background) 52%, #00AEFF 48%) 0%, color-mix(in oklch, var(--background) 78%, #bfdeff 22%) 58%, transparent 100%)' }}>
-                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute -left-12 -top-4 w-36 max-w-none rotate-[1deg] scale-x-[-1] opacity-80 sm:-left-8 sm:-top-3 sm:w-44' />
-                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute -right-12 -top-3 w-36 max-w-none -rotate-[0.5deg] opacity-80 sm:-right-8 sm:-top-2 sm:w-44' />
-                <img src={Cloud2} alt='' aria-hidden='true' className='pointer-events-none absolute left-[14%] top-6 w-32 max-w-none rotate-[1deg] scale-x-[-1] opacity-55 sm:left-[20%] sm:top-7 sm:w-40' />
-                <img src={Cloud2} alt='' aria-hidden='true' className='pointer-events-none absolute right-[14%] top-7 w-32 max-w-none -rotate-[1deg] opacity-55 sm:right-[20%] sm:top-8 sm:w-40' />
+            <header className='absolute inset-x-0 top-0 z-20 flex h-[calc(7rem+env(safe-area-inset-top))] items-start justify-center pt-[calc(0.375rem+env(safe-area-inset-top))] sm:h-28 sm:pt-3' style={{ backgroundImage: 'var(--trip-sky-gradient)' }}>
+                <div aria-hidden='true' className='night-sky-stars pointer-events-none absolute inset-0' />
+                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute -left-12 -top-4 w-36 max-w-none rotate-[1deg] scale-x-[-1] opacity-80 dark:opacity-[0.02] sm:-left-8 sm:-top-3 sm:w-44' />
+                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute -right-12 -top-3 w-36 max-w-none -rotate-[0.5deg] opacity-80 dark:opacity-[0.02] sm:-right-8 sm:-top-2 sm:w-44' />
+                <img src={Cloud2} alt='' aria-hidden='true' className='pointer-events-none absolute left-[14%] top-6 w-32 max-w-none rotate-[1deg] scale-x-[-1] opacity-55 dark:opacity-[0.02] sm:left-[20%] sm:top-7 sm:w-40' />
+                <img src={Cloud2} alt='' aria-hidden='true' className='pointer-events-none absolute right-[14%] top-7 w-32 max-w-none -rotate-[1deg] opacity-55 dark:opacity-[0.02] sm:right-[20%] sm:top-8 sm:w-40' />
                 <Sheet>
                     <SheetTrigger render={<Button variant='ghost' className='h-auto! min-h-0 flex-col gap-0 rounded-full px-0 py-0 hover:bg-transparent! active:bg-transparent! aria-expanded:bg-transparent!' aria-label={`Open details for ${trip.destination}`} />}>
                         <img src={getTripThumbnail(trip)} alt='' className='size-14 rounded-full object-cover shadow-sm' />
@@ -398,16 +716,11 @@ const TripOverview = () => {
                                     {airlineName ? <div className='flex justify-between gap-4'><span className='text-muted-foreground'>Airline</span><span className='text-right font-medium'>{airlineName}</span></div> : null}
                                     {trip.flightClass ? <div className='flex justify-between gap-4'><span className='text-muted-foreground'>Cabin</span><span className='text-right font-medium'>{trip.flightClass}</span></div> : null}
                                 </div>
-                                <Button variant='secondary' className='w-full' onClick={handleOpenPlanOverview} disabled={items.length === 0 || hasFailedWeight || planLoading}><Sparkles /> {plan ? 'View packing plan' : 'Plan packing'}</Button>
                             </div>
                         </div>
-                        <SheetFooter className='border-t bg-background px-6 py-6'>
+                        <SheetFooter className='bg-background px-6 py-6'>
                             <Button className='w-full' onClick={() => navigate(`/trips/${tripId}/edit`)}><Pencil /> Edit trip</Button>
-                            <div className='mt-5 rounded-xl border border-destructive/20 bg-destructive/5 p-4'>
-                                <p className='font-medium text-destructive'>Danger zone</p>
-                                <p className='mt-1 text-xs text-muted-foreground'>Deleting this trip permanently removes its packing list and plan.</p>
-                                <Button variant='destructive' className='mt-4 w-full' onClick={handleDeleteTrip} disabled={deleting}><Trash2 /> {deleting ? 'Deleting…' : 'Delete trip'}</Button>
-                            </div>
+                            <Button variant='negative' className='w-full' onClick={handleOpenDeleteConfirmation} disabled={deleting}><Trash2 /> Delete trip</Button>
                         </SheetFooter>
                     </SheetContent>
                 </Sheet>
@@ -431,6 +744,33 @@ const TripOverview = () => {
                     <div className='min-h-0 flex-1'>{overviewPanel}</div>
                 </SheetContent>
             </Sheet>
+
+            <Dialog open={showDeleteConfirmation} onOpenChange={(open) => { if (!deleting) setShowDeleteConfirmation(open) }}>
+                <DialogContent className='gap-6 rounded-2xl! p-6 sm:max-w-lg'>
+                    <DialogHeader className='gap-2 pr-8'>
+                        <DialogTitle className='text-xl'>Delete this trip?</DialogTitle>
+                        <DialogDescription className='max-w-md leading-6'>This permanently deletes {trip.destination}, its packing list, and its plan. This action cannot be undone.</DialogDescription>
+                    </DialogHeader>
+                    {actionError ? <p className='text-sm text-destructive'>{actionError.message}</p> : null}
+                    <div className='grid grid-cols-2 gap-3'>
+                        <Button className='w-full' variant='outline' onClick={() => setShowDeleteConfirmation(false)} disabled={deleting}>Cancel</Button>
+                        <Button
+                            variant='negative'
+                            className={`w-full overflow-hidden bg-[#b83e5d]! bg-none! before:hidden! ${deleteUnlockProgress < 100 ? 'opacity-60 disabled:opacity-60' : 'opacity-100 disabled:opacity-100'}`}
+                            onClick={handleDeleteTrip}
+                            disabled={deleteUnlockProgress < 100 || deleting}
+                        >
+                            <span
+                                aria-hidden='true'
+                                className='absolute inset-0 z-0 origin-left bg-[linear-gradient(180deg,color-mix(in_oklch,var(--destructive),#ffa0b8_62%)_0%,color-mix(in_oklch,var(--destructive),#f45f82_70%)_52%,color-mix(in_oklch,var(--destructive),#dd4668_68%)_100%)]'
+                                style={{ transform: `scaleX(${deleteUnlockProgress / 100})` }}
+                            />
+                            <Trash2 className='relative z-10' />
+                            <span className='relative z-10' aria-live='polite'>{deleting ? 'Deleting…' : deleteUnlockProgress < 100 ? `Delete trip (${Math.max(1, Math.ceil((DELETE_CONFIRMATION_DELAY_MS * (1 - deleteUnlockProgress / 100)) / 1000))}s)` : 'Delete trip'}</span>
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             <EditItemModal open={Boolean(editingItem)} item={editingItem} onClose={() => { if (!savingEdit) { setEditingItem(null); setEditError(null) } }} onSubmit={handleSaveItemMetrics} saving={savingEdit} error={editError} />
             <NoSuitcaseModal open={showNoSuitcaseModal} onClose={() => setShowNoSuitcaseModal(false)} onAddSuitcase={() => navigate('/suitcases')} />

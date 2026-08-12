@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Check, Luggage } from 'lucide-react'
+import { Check, ListTodo } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import TripCardDetails from '@/components/trips/TripCardDetails'
@@ -22,7 +22,7 @@ const Trip = ({ trip, wide = false }) => {
                         <div className='min-w-0'>
                             <CardTitle className='truncate text-lg'>{trip.destination}</CardTitle>
                         </div>
-                        <Badge variant='secondary' className={trip.packed ? 'border-0 bg-emerald-500/15 text-emerald-700' : 'border-0'}>{trip.packed ? <Check /> : <Luggage />}{trip.packed ? 'Packed' : 'Planning'}</Badge>
+                        <Badge variant='secondary' className={trip.packed ? 'border-0 bg-emerald-500/15 text-emerald-700' : 'border-0 text-neutral1'}>{trip.packed ? <Check /> : <ListTodo />}{trip.packed ? 'Packed' : 'Planning'}</Badge>
                     </div>
                 </CardHeader>
                 <CardContent className='pb-4 pt-2'>

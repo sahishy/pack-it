@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Box, Check, CheckCircle2, Cuboid, Home, MapPin, Package, Scale } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Luggage, Package, Scale } from 'lucide-react'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import Return from '@/components/common/Return'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import LoadingScreen from '@/components/common/LoadingScreen'
 import ErrorScreen from '@/components/common/ErrorScreen'
@@ -14,7 +13,7 @@ import { useTripPlan } from '../contexts/PlansContext'
 import { useTripItems } from '../contexts/ItemsContext'
 import { useSuitcases } from '../contexts/SuitcasesContext'
 import { getTripById } from '../utils/tripUtils'
-import { getCategoryEmoji, getResolvedItemWeightKg, getTotalWeight, ITEM_CATEGORY_CONFIG } from '../utils/itemUtils'
+import { getCategoryEmoji, getTotalWeight } from '../utils/itemUtils'
 import { setTripPackedStatus } from '../services/tripService'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 
@@ -42,17 +41,6 @@ const StrategyOverview = () => {
     const progressPercent = totalSteps > 0 ? Math.round(((currentStepIndex + 1) / totalSteps) * 100) : 0
     const isFinalStep = totalSteps > 0 && currentStepIndex === totalSteps - 1
     const totalWeight = useMemo(() => getTotalWeight(items), [items])
-    const baggageLimit = Number(trip?.baggageLimit ?? trip?.maxWeight ?? 0)
-    const groupedItems = useMemo(() => {
-        const grouped = items.reduce((result, item) => {
-            const category = item?.category || 'Other'
-            result[category] = [...(result[category] ?? []), item]
-            return result
-        }, {})
-        const configured = ITEM_CATEGORY_CONFIG.map((category) => category.name)
-        const order = [...configured.filter((category) => grouped[category]), ...Object.keys(grouped).filter((category) => !configured.includes(category)).sort()]
-        return order.map((category) => ({ category, items: grouped[category] }))
-    }, [items])
 
     if (!user) return <Navigate to='/login' replace />
     if (tripsLoading || planLoading || itemsLoading) return <LoadingScreen text='Loading strategy...' />
@@ -61,9 +49,14 @@ const StrategyOverview = () => {
 
     if (totalSteps === 0) {
         return (
-            <main className='mx-auto flex min-h-full w-full max-w-3xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
+            <main className='mx-auto flex min-h-full w-full max-w-2xl flex-col gap-8 px-5 py-6 sm:px-8 sm:py-10'>
                 <Return link={`/trips/${tripId}/plan`} />
-                <Card><CardHeader><CardTitle>No strategy yet</CardTitle><CardDescription>Generate a packing strategy from the analysis page first.</CardDescription></CardHeader><CardContent><Button onClick={() => navigate(`/trips/${tripId}/plan`)}>Back to analysis</Button></CardContent></Card>
+                <div className='flex flex-1 flex-col items-center justify-center text-center'>
+                    <div className='flex size-12 items-center justify-center rounded-2xl bg-muted'><Luggage className='size-5' /></div>
+                    <h1 className='mt-5 text-2xl font-semibold tracking-tight'>No packing order yet</h1>
+                    <p className='mt-2 max-w-sm text-muted-foreground'>Start with the quick trip analysis and we’ll build it for you.</p>
+                    <Button className='mt-6' onClick={() => navigate(`/trips/${tripId}/plan`)}>Start analysis <ArrowRight /></Button>
+                </div>
             </main>
         )
     }
@@ -77,95 +70,98 @@ const StrategyOverview = () => {
         setCurrentStepIndex((previous) => Math.min(previous + 1, totalSteps - 1))
     }
 
+    const handlePrevious = () => {
+        setCurrentStepIndex((previous) => Math.max(previous - 1, 0))
+    }
+
     if (isCompleted) {
         return (
-            <main className='mx-auto flex min-h-full w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
-                <section className='rounded-2xl border bg-muted/30 p-8 text-center sm:p-12'>
-                    <div className='mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600'><CheckCircle2 /></div>
-                    <h1 className='text-3xl font-semibold tracking-tight'>Your trip is packed</h1>
-                    <p className='mt-2 text-muted-foreground'>{trip.destination} is ready to go.</p>
-                </section>
+            <main className='min-h-full bg-background'>
+                <div className='mx-auto flex min-h-full w-full max-w-2xl flex-col items-center justify-center px-5 py-12 text-center sm:px-8'>
+                    <DotLottieReact
+                        className='size-60'
+                        src='https://lottie.host/5469e68e-7a9c-4862-a9ab-2e21e55d33c9/CEjnkN5238.lottie'
+                        autoplay
+                    />
+                    <p className='mt-8 text-sm font-medium text-muted-foreground'>All {totalSteps} steps complete</p>
+                    <h1 className='mt-2 text-4xl font-semibold tracking-tight'>You’re packed.</h1>
+                    <p className='mt-3 text-muted-foreground'>{trip.destination} is ready to go.</p>
 
-                <div className='grid gap-4 sm:grid-cols-3'>
-                    <SummaryMetric icon={<MapPin />} value={trip.destination} label='Destination' />
-                    <SummaryMetric icon={<Package />} value={items.length} label='Items packed' />
-                    <SummaryMetric icon={<Scale />} value={formatWeight(totalWeight, { decimals: 2 })} label={`of ${formatWeight(baggageLimit, { decimals: 2 })}`} />
-                </div>
+                    <div className='mt-10 grid w-full grid-cols-2 gap-3'>
+                        <SummaryMetric icon={<Package />} value={items.length} label='items' />
+                        <SummaryMetric icon={<Scale />} value={formatWeight(totalWeight, { decimals: 1 })} label='packed' />
+                    </div>
 
-                <Card>
-                    <CardHeader><CardTitle>Final packing list</CardTitle><CardDescription>Everything included in this packing session.</CardDescription></CardHeader>
-                    <CardContent className='space-y-6'>
-                        {groupedItems.map((group) => (
-                            <section key={group.category}>
-                                <h3 className='mb-2 text-sm font-medium'>{getCategoryEmoji(group.category)} {group.category} <span className='font-normal text-muted-foreground'>· {group.items.length}</span></h3>
-                                <div className='divide-y rounded-xl border'>
-                                    {group.items.map((item) => (
-                                        <div key={item.id} className='flex items-center justify-between gap-4 px-4 py-3 text-sm'>
-                                            <span className='inline-flex items-center gap-2 font-medium'><Check className='size-4 text-emerald-600' />{item.name}</span>
-                                            <span className='text-muted-foreground'>{formatWeight(getResolvedItemWeightKg(item.weight), { decimals: 2 })}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </section>
-                        ))}
-                    </CardContent>
-                </Card>
-
-                <div className='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'>
-                    <Button variant='outline' onClick={() => navigate(`/trips/${tripId}`)}>Back to trip</Button>
-                    <Button onClick={() => navigate('/home')}><Home className='size-4' /> Return home</Button>
+                    <Button className='mt-6 w-full rounded-2xl!' onClick={() => navigate(`/trips/${tripId}`)}>Done</Button>
                 </div>
             </main>
         )
     }
 
     return (
-        <main className='mx-auto flex min-h-full w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:py-12'>
-            <Return link={`/trips/${tripId}/plan`} />
-            <section>
-                <div className='mb-3 flex items-center justify-between text-sm'><span className='font-medium'>Step {currentStepIndex + 1} of {totalSteps}</span><span className='text-muted-foreground'>{progressPercent}% complete</span></div>
-                <Progress value={progressPercent} />
-            </section>
-
-            <div className='grid flex-1 gap-6 lg:grid-cols-[1.45fr_0.75fr]'>
-                <Card className='min-h-[30rem] overflow-hidden p-0'>
-                    <CardHeader className='border-b'>
-                        <div className='flex items-center justify-between gap-3'><Badge variant='secondary'>Placement preview</Badge><Badge variant='outline'>Coming soon</Badge></div>
-                        <CardTitle className='mt-2'>Where this item goes</CardTitle>
-                        <CardDescription>{currentStep.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className='flex min-h-[24rem] items-center justify-center bg-muted/20 p-6'>
-                        <div className='flex h-full min-h-80 w-full flex-col items-center justify-center rounded-xl border border-dashed bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:28px_28px] text-center'>
-                            <div className='rounded-2xl border bg-background p-4 shadow-sm'><Cuboid className='size-8 text-muted-foreground' /></div>
-                            <p className='mt-4 font-medium'>2D / 3D packing visualization</p>
-                            <p className='mt-1 max-w-sm px-6 text-sm text-muted-foreground'>An interactive placement guide will show the item’s exact position and orientation here.</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div className='flex flex-col gap-4'>
-                    <Card>
-                        <CardHeader><CardDescription>Currently packing</CardDescription><CardTitle>{currentItem?.name ?? 'Selected item'}</CardTitle></CardHeader>
-                        <CardContent className='space-y-3 text-sm'>
-                            <DetailRow label='Item size' value={formatDimensions(originalDimensions, { decimals: 1 })} />
-                            {hasAdjustment ? <DetailRow label={`Packed ${currentStep.packingAdjustment}`} value={formatDimensions(packedDimensions, { decimals: 1 })} /> : null}
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader><CardDescription>Target suitcase</CardDescription><CardTitle className='flex items-center gap-2'><Box className='size-4' />{currentSuitcase?.name ?? 'Main suitcase'}</CardTitle></CardHeader>
-                        <CardContent><DetailRow label='Suitcase size' value={formatDimensions(currentSuitcase?.dimensions, { decimals: 1 })} /></CardContent>
-                    </Card>
-                    <Button className='mt-auto w-full' size='lg' onClick={handleNext}>{isFinalStep ? 'Finish packing' : 'Next step'} <ArrowRight className='size-4' /></Button>
+        <main className='min-h-full bg-background'>
+            <div className='mx-auto flex min-h-full w-full max-w-2xl flex-col px-5 pb-28 pt-6 sm:px-8 sm:pb-32 sm:pt-10'>
+                <div className='flex items-center justify-between'>
+                    <Return text='Back' link={`/trips/${tripId}/plan`} />
+                    <span className='text-sm tabular-nums text-muted-foreground'>{currentStepIndex + 1} / {totalSteps}</span>
                 </div>
+                <Progress className='mt-6 h-1' value={progressPercent} />
+
+                <div className='flex flex-1 flex-col justify-center py-10 sm:py-14'>
+                    <div className='flex size-16 items-center justify-center rounded-3xl bg-muted text-3xl' aria-hidden='true'>
+                        {getCategoryEmoji(currentItem?.category)}
+                    </div>
+                    <p className='mt-8 text-sm font-medium text-muted-foreground'>{currentSuitcase?.name ?? 'Main suitcase'}</p>
+                    <h1 className='mt-2 text-3xl font-semibold tracking-tight capitalize sm:text-4xl'>{currentItem?.name ?? 'Selected item'}</h1>
+                    <p className='mt-3 max-w-xl text-base leading-7 text-muted-foreground'>{currentStep.description}</p>
+
+                    {hasAdjustment ? (
+                        <div className='mt-10 rounded-3xl bg-muted/55 p-5 sm:p-6'>
+                            <p className='font-semibold capitalize'>{currentStep.packingAdjustment}</p>
+                            <p className='mt-1 text-sm leading-6 text-muted-foreground'>{currentStep.packingAdjustmentReason}</p>
+                            <div className='mt-5 grid grid-cols-2 gap-2'>
+                                <div className='min-w-0 rounded-2xl bg-background/80 p-3.5'>
+                                    <p className='text-xs font-medium text-muted-foreground'>Original</p>
+                                    <p className='mt-1 truncate text-sm font-medium'>{formatDimensions(originalDimensions, { decimals: 1 })}</p>
+                                </div>
+                                <div className='min-w-0 rounded-2xl bg-background/80 p-3.5'>
+                                    <p className='text-xs font-medium capitalize text-muted-foreground'>{currentStep.packingAdjustment}</p>
+                                    <p className='mt-1 truncate text-sm font-medium'>{formatDimensions(packedDimensions, { decimals: 1 })}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+
+            <div className='fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 sm:bottom-12'>
+                <Button
+                    variant='secondary'
+                    className='rounded-2xl! border-0! shadow-none!'
+                    onClick={handlePrevious}
+                    disabled={currentStepIndex === 0}
+                >
+                    <ArrowLeft className='size-4' />
+                    <span>Previous</span>
+                </Button>
+                <Button
+                    className='rounded-2xl! px-5 shadow-[inset_0_1px_0_rgb(255_255_255_/_0.2),inset_0_-1px_0_rgb(0_0_0_/_0.2)]! hover:shadow-[inset_0_1px_0_rgb(255_255_255_/_0.26),inset_0_-1px_0_rgb(0_0_0_/_0.18)]!'
+                    onClick={handleNext}
+                >
+                    <span>{isFinalStep ? 'Finish packing' : 'Next step'}</span>
+                    <ArrowRight className='size-4' />
+                </Button>
             </div>
         </main>
     )
 }
 
-const DetailRow = ({ label, value }) => <div className='flex items-start justify-between gap-4'><span className='text-muted-foreground'>{label}</span><span className='text-right font-medium'>{value}</span></div>
-
 const SummaryMetric = ({ icon, value, label }) => (
-    <Card><CardContent className='flex items-center gap-3 p-0'><span className='text-muted-foreground'>{icon}</span><div><p className='font-semibold'>{value}</p><p className='text-sm text-muted-foreground'>{label}</p></div></CardContent></Card>
+    <div className='flex flex-col items-center gap-2 rounded-3xl bg-muted/55 px-4 py-6'>
+        <span className='text-muted-foreground [&_svg]:size-4'>{icon}</span>
+        <p className='text-xl font-semibold'>{value}</p>
+        <p className='text-sm text-muted-foreground'>{label}</p>
+    </div>
 )
 
 export default StrategyOverview

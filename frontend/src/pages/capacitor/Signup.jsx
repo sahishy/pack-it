@@ -43,7 +43,7 @@ const Signup = () => {
     }
 
     return (
-        <main className='capacitor-safe-area min-h-svh bg-background'>
+        <main className='min-h-svh bg-background pt-[calc(env(safe-area-inset-top)_+_1rem)] pr-[calc(env(safe-area-inset-right)_+_1.25rem)] pb-[calc(env(safe-area-inset-bottom)_+_2rem)] pl-[calc(env(safe-area-inset-left)_+_1.25rem)]'>
             <div className='mx-auto flex w-full max-w-sm flex-col'>
                 <Button render={<Link to='/capacitor' />} nativeButton={false} variant='ghost' size='icon' className='-ml-2 rounded-full' aria-label='Back'><ArrowLeft /></Button>
 

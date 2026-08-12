@@ -23,7 +23,13 @@ const LabeledSlider = ({
             min={min}
             max={max}
             step={step}
-            onValueChange={(nextValue) => onChange?.(nextValue[0])}
+            onValueChange={(nextValue) => {
+                const normalizedValue = Array.isArray(nextValue) ? nextValue[0] : nextValue
+
+                if (Number.isFinite(normalizedValue)) {
+                    onChange?.(normalizedValue)
+                }
+            }}
         />
         <div className='flex items-center justify-between'>
             <span className='text-xs text-neutral1'>{leftHint}</span>

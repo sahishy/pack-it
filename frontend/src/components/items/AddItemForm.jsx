@@ -4,7 +4,6 @@ import { Counter } from '@/components/ui/counter'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '../../contexts/AuthContext'
 import { createItem } from '../../services/itemService'
-import { deleteTripPlan } from '../../services/planService'
 
 const AddItemForm = ({ tripId, suitcaseId = '', onCancel, onSaved }) => {
     const { user } = useAuth()
@@ -38,10 +37,6 @@ const AddItemForm = ({ tripId, suitcaseId = '', onCancel, onSaved }) => {
                 suitcaseId,
             })
 
-            void deleteTripPlan(user.uid, tripId).catch((errorValue) => {
-                console.error('Failed to clear trip plan after adding item', errorValue)
-            })
-
             onSaved?.()
         } catch (errorValue) {
             console.error('Failed to create item', errorValue)
@@ -51,7 +46,7 @@ const AddItemForm = ({ tripId, suitcaseId = '', onCancel, onSaved }) => {
     }
 
     return (
-        <form onSubmit={handleSubmit} className='w-full'>
+        <form onSubmit={handleSubmit} className='w-full animate-[add-item-form-in_240ms_ease-out_both] [will-change:opacity,filter,transform] motion-reduce:animate-none'>
             <div className='space-y-2'>
                 <div className='flex items-center gap-2'>
                     <div className='min-w-0 flex-1 rounded-xl border bg-background px-4'>

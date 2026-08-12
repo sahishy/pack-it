@@ -11,6 +11,7 @@ import Input from '@/components/common/FormInput'
 import { Button } from '@/components/ui/button'
 import Select from '@/components/common/FormSelect'
 import TabSelector from '@/components/common/TabSelector'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
 import {
     convertUnits,
     getDefaultUnitsForCategory,
@@ -108,10 +109,12 @@ const UnitConverter = () => {
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Unit Converter</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Convert temperature, weight, and distance instantly.</p>
-                </div>
+                <ToolPageHeader
+                    title='Unit Converter'
+                    description='Convert temperature, weight, and distance instantly.'
+                    icon={FaScaleBalanced}
+                    color='#ff7a1a'
+                />
 
                 <TabSelector
                     tabs={TAB_OPTIONS}
@@ -121,8 +124,8 @@ const UnitConverter = () => {
                     toColor='#ff4a3d'
                 />
 
-                <Card className='flex flex-col gap-5'>
-                    <section className='flex flex-col gap-3'>
+                <Card className='grid gap-5 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-4'>
+                    <section className='flex min-w-0 flex-col gap-3'>
                         <h2 className='text-sm font-medium text-neutral0'>From</h2>
 
                         <Select
@@ -142,24 +145,24 @@ const UnitConverter = () => {
                             onChange={(event) => setFromAmount(event.target.value)}
                             onBlur={() => setFromAmount(normalizeFiveDecimals(fromAmount))}
                             placeholder='0'
-                            className='no-spinner py-4 text-center text-4xl! leading-none! font-semibold!'
+                            className='h-14 text-center text-2xl! font-semibold! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
                         />
                     </section>
 
-                    <section className='flex items-center justify-center'>
+                    <section className='flex items-center justify-center md:self-center'>
                         <Button
                             type='button'
                             onClick={handleSwap}
                             variant='secondary'
-                            className='flex gap-3'
+                            className='flex gap-3 md:size-10 md:rounded-full md:p-0'
                             aria-label='Swap currencies'
                         >
                             <FaArrowRightArrowLeft className='text-sm' />
-                            Swap Units
+                            <span className='md:hidden'>Swap Units</span>
                         </Button>
                     </section>
 
-                    <section className='flex flex-col gap-3'>
+                    <section className='flex min-w-0 flex-col gap-3'>
                         <h2 className='text-sm font-medium text-neutral0'>To</h2>
 
                         <Select
@@ -176,7 +179,7 @@ const UnitConverter = () => {
                             type='text'
                             value={formatConvertedValue(convertedValue)}
                             readOnly
-                            className='no-spinner border-none! bg-linear-to-r from-[#ff7a1a] to-[#ff4a3d] py-4 text-center text-4xl! leading-none! font-semibold! text-white!'
+                            className='h-14 border-none! bg-linear-to-r from-[#ff7a1a] to-[#ff4a3d] text-center text-2xl! font-semibold! text-white! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
                         />
                     </section>
                 </Card>

@@ -36,7 +36,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
                         onClick={() => onToggleChecked(item.id, !item.checked)}
                         disabled={isBusy}
                         aria-label={`Mark ${item.name} as packed`}
-                        className='flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/45 transition-colors hover:border-muted-foreground/70 disabled:cursor-not-allowed disabled:opacity-60'
+                        className='flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-muted-foreground/45 transition-colors hover:border-muted-foreground/70 disabled:opacity-60'
                     >
                         <span className={`size-2.5 rounded-full bg-muted-foreground transition-[transform,opacity] duration-200 ease-out motion-reduce:transition-none ${item.checked ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
                     </button>
@@ -77,7 +77,7 @@ const Item = ({ item, onToggleChecked, onDelete, onEdit, isUpdating = false, isD
                             type='button'
                             onClick={() => onEdit?.(item)}
                             disabled={isBusy}
-                            className='rounded-lg p-2 text-warning1 cursor-pointer transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
+                            className='rounded-lg p-2 text-neutral1 cursor-pointer transition hover:bg-neutral4 disabled:cursor-not-allowed disabled:opacity-60'
                             aria-label={`Edit ${item.name} metrics`}
                         >
                             <FiEdit className='text-xl' />

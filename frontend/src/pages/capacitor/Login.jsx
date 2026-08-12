@@ -33,7 +33,7 @@ const Login = () => {
     }
 
     return (
-        <main className='capacitor-safe-area min-h-svh bg-background'>
+        <main className='min-h-svh bg-background pt-[calc(env(safe-area-inset-top)_+_1rem)] pr-[calc(env(safe-area-inset-right)_+_1.25rem)] pb-[calc(env(safe-area-inset-bottom)_+_2rem)] pl-[calc(env(safe-area-inset-left)_+_1.25rem)]'>
             <div className='mx-auto flex min-h-[calc(100svh-max(3rem,env(safe-area-inset-top))-max(2rem,env(safe-area-inset-bottom)))] w-full max-w-sm flex-col'>
                 <Button render={<Link to='/capacitor' />} nativeButton={false} variant='ghost' size='icon' className='-ml-2 rounded-full' aria-label='Back'><ArrowLeft /></Button>
 
@@ -47,7 +47,6 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className='mt-10 space-y-5' aria-busy={loading}>
                     <FormInput label='Email address' id='email' name='email' type='email' autoComplete='email' placeholder='you@example.com' value={formData.email} onChange={(event) => setFormData((current) => ({ ...current, email: event.target.value }))} />
                     <FormInput label='Password' id='password' name='password' type='password' autoComplete='current-password' placeholder='Enter your password' value={formData.password} onChange={(event) => setFormData((current) => ({ ...current, password: event.target.value }))} />
-                    <div className='flex justify-end'><a href='#' className='text-sm font-medium text-foreground underline-offset-4 hover:underline'>Forgot password?</a></div>
                     {error ? <p className='rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive'>{error}</p> : null}
                     <Button type='submit' loading={loading} className='h-12 w-full rounded-xl'><LockKeyhole /> Log in</Button>
                 </form>

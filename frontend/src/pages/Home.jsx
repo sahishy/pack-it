@@ -1,5 +1,6 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { Check, Luggage, Plus, Route } from 'lucide-react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Check, ListTodo, Plus } from 'lucide-react'
 import { BiSolidPlaneAlt } from "react-icons/bi";
 import { useTrips } from '@/contexts/TripsContext'
 import Trip from '@/components/trips/Trip'
@@ -12,6 +13,7 @@ import ErrorScreen from '@/components/common/ErrorScreen'
 import Cloud from '@/assets/images/cloud.png'
 import logo_sm_white from '@/assets/logo_sm_white.png'
 import { FALLBACK_TRIP_THUMBNAIL } from '@/utils/tripUtils'
+import NewTrip from './NewTrip'
 
 const getCreatedAtMs = (trip) => {
     const createdAt = trip?.createdAt
@@ -55,7 +57,7 @@ const FeaturedTrip = ({ trip }) => {
                         <div className='min-w-0'>
                             <h2 className='truncate text-2xl font-semibold tracking-tight'>{trip.destination}</h2>
                         </div>
-                        <Badge variant='secondary' className={trip.packed ? 'border-0 bg-emerald-500/15 text-emerald-700' : 'border-0'}>{trip.packed ? <Check /> : <Luggage />}{trip.packed ? 'Packed' : 'Planning'}</Badge>
+                        <Badge variant='secondary' className={trip.packed ? 'border-0 bg-emerald-500/15 text-emerald-700' : 'border-0 text-neutral1'}>{trip.packed ? <Check /> : <ListTodo />}{trip.packed ? 'Packed' : 'Planning'}</Badge>
                     </div>
                     <TripCardDetails trip={trip} className='mt-4' />
 
@@ -67,18 +69,9 @@ const FeaturedTrip = ({ trip }) => {
     )
 }
 
-const EmptyFeaturedTrip = ({ onCreate }) => (
-    <div className='flex min-h-64 w-full max-w-xl flex-col items-center justify-center rounded-2xl border border-dashed border-white/80 bg-background/70 px-6 text-center shadow-[0_16px_36px_rgba(31,41,55,0.08)] backdrop-blur-sm'>
-        <div className='mb-4 flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground'><Route className='size-5' /></div>
-        <h2 className='font-semibold text-foreground'>Your next adventure starts here.</h2>
-        <p className='mt-1 max-w-sm text-sm text-muted-foreground'>Create a trip and Pack-It will help you prepare for every detail.</p>
-        <Button className='mt-5' onClick={onCreate}><Plus />Create a trip</Button>
-    </div>
-)
-
 const Home = () => {
-    const navigate = useNavigate()
     const { trips, loading, error } = useTrips()
+    const [isNewTripOpen, setIsNewTripOpen] = useState(false)
     const sortedTrips = [...trips].sort((a, b) => getCreatedAtMs(b) - getCreatedAtMs(a))
     const featuredTrip = sortedTrips[0]
     const remainingTrips = sortedTrips.slice(1)
@@ -89,37 +82,38 @@ const Home = () => {
     if (error) return <ErrorScreen text={error.message ?? 'Failed to load trips.'} />
 
     return (
-        <main className='min-h-full overflow-hidden bg-background'>
-            <section className='relative isolate overflow-visible bg-background'>
-                <div
-                    aria-hidden='true'
-                    className='pointer-events-none absolute inset-x-0 top-0 z-[-1] h-[42rem] opacity-80 sm:h-[28rem]'
-                    style={{ backgroundImage: 'radial-gradient(ellipse 145% 74% at 50% 0%, #00AEFF 0%, #88D9FF 58%, #FFFFFF 100%)' }} />
-                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute left-[-5.5rem] top-[12rem] z-0 w-[17rem] max-w-none rotate-[5deg] scale-x-[-1] opacity-95 sm:left-[-4rem] sm:top-[7rem] sm:w-[22rem]' />
-                <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute right-[-5.5rem] top-[14rem] z-0 w-[17rem] max-w-none -rotate-[2deg] opacity-95 sm:right-[-4rem] sm:top-[8rem] sm:w-[22rem]' />
+        <main className='relative isolate min-h-full overflow-hidden bg-background'>
+            <div
+                aria-hidden='true'
+                className='pointer-events-none absolute inset-x-0 top-0 z-0 h-[29rem] opacity-80 sm:h-[28rem]'
+                style={{ backgroundImage: 'var(--home-sky-gradient)' }} />
+            <div aria-hidden='true' className='night-sky-stars pointer-events-none absolute inset-x-0 top-0 z-0 h-[29rem] sm:h-[28rem]' />
+            <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute left-[-5.5rem] top-[9rem] z-0 w-[17rem] max-w-none rotate-[5deg] scale-x-[-1] opacity-95 dark:opacity-[0.03] sm:left-[-4rem] sm:top-[7rem] sm:w-[22rem]' />
+            <img src={Cloud} alt='' aria-hidden='true' className='pointer-events-none absolute right-[-5.5rem] top-[11rem] z-0 w-[17rem] max-w-none -rotate-[2deg] opacity-95 dark:opacity-[0.03] sm:right-[-4rem] sm:top-[8rem] sm:w-[22rem]' />
 
+            <section className='relative z-10 overflow-visible'>
                 <div className='relative z-10 mx-auto flex w-full max-w-4xl flex-col items-center px-5 pb-10 pt-[calc(5rem+env(safe-area-inset-top))] text-center sm:px-8 sm:pt-18 lg:px-10'>
                     <header className='flex flex-col items-center'>
                         <img src={logo_sm_white} alt='Pack-It' className='mb-4 size-15 animate-[chat-empty-state-in_500ms_ease-out_both] object-contain motion-reduce:animate-none' />
-                        <h1 className='max-w-sm animate-[chat-empty-state-in_500ms_ease-out_80ms_both] text-3xl font-semibold leading-[1.05] tracking-tight text-white motion-reduce:animate-none sm:text-4xl'>Continue packing for {continueTripName}?</h1>
+                        <h1 className='max-w-sm animate-[chat-empty-state-in_500ms_ease-out_80ms_both] text-3xl font-semibold leading-[1.05] tracking-tight text-white motion-reduce:animate-none sm:text-4xl'>
+                            {featuredTrip ? `Continue packing for ${continueTripName}?` : 'Welcome to Pack-it'}
+                        </h1>
                     </header>
 
-                    <div className='mt-8 w-full max-w-4xl translate-y-16 text-left sm:translate-y-10'>
+                    {loading || featuredTrip ? <div className='mt-8 w-full max-w-4xl translate-y-16 text-left sm:translate-y-10'>
                         {loading ? (
-                            <div className='w-full max-w-xl'><TripGhost /></div>
-                        ) : featuredTrip ? (
-                            <FeaturedTrip trip={featuredTrip} />
+                            <div className='w-full max-w-xl mx-auto'><TripGhost /></div>
                         ) : (
-                            <EmptyFeaturedTrip onCreate={() => navigate('/trips/new')} />
+                            <FeaturedTrip trip={featuredTrip} />
                         )}
-                    </div>
+                    </div> : null}
                 </div>
             </section>
 
-            <section className='mx-auto w-full max-w-4xl px-5 pb-12 pt-20 sm:px-8 sm:pb-16 lg:px-10'>
+            <section className={`relative z-10 mx-auto w-full max-w-4xl px-5 pb-12 sm:px-8 sm:pb-16 lg:px-10 ${!loading && !featuredTrip ? 'mt-24' : 'pt-20'}`}>
                 <div className='flex items-center justify-between gap-4'>
                     <h2 className='text-lg font-medium text-foreground'>Your trips</h2>
-                    <Button onClick={() => navigate('/trips/new')}><Plus />New trip</Button>
+                    <Button onClick={() => setIsNewTripOpen(true)}><Plus />New trip</Button>
                 </div>
                 {loading ? (
                     <div className='mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
@@ -135,6 +129,7 @@ const Home = () => {
                     <p className='mt-3 text-sm text-muted-foreground'>{featuredTrip ? 'Your saved trips will appear here.' : 'Create a trip to start your travel plans.'}</p>
                 )}
             </section>
+            {isNewTripOpen ? <NewTrip open onClose={() => setIsNewTripOpen(false)} /> : null}
         </main>
     )
 }

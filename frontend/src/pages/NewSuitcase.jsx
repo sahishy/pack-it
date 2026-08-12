@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FiAlertTriangle, FiUploadCloud } from 'react-icons/fi'
 import { Luggage } from 'lucide-react'
 import FormInput from '@/components/common/FormInput'
@@ -10,8 +9,7 @@ import { hasLowSuitcaseConfidence } from '../utils/suitcaseUtils'
 import useWeightFormatter from '../hooks/useWeightFormatter'
 import { convertLengthFromCm, convertLengthToCm } from '../utils/measurementUtils'
 
-const NewSuitcase = () => {
-    const navigate = useNavigate()
+const NewSuitcase = ({ open, onClose }) => {
     const {
         addSuitcase,
         saving,
@@ -94,9 +92,8 @@ const NewSuitcase = () => {
                 confidenceName: prediction?.confidenceName,
                 confidenceDimensions: prediction?.confidenceDimensions,
             })
-        } catch (errorValue) {
+        } catch {
             setPredictionConfidence(null)
-            setFormError(errorValue?.message ?? 'Failed to analyze image.')
         } finally {
             event.target.value = ''
         }
@@ -130,15 +127,15 @@ const NewSuitcase = () => {
         try {
             setFormError('')
             await addSuitcase(payload, predictionConfidence ?? {})
-            navigate('/suitcases')
+            onClose?.()
         } catch (errorValue) {
             setFormError(errorValue?.message ?? 'Failed to save suitcase.')
         }
     }
 
     return (
-        <main className='min-h-full'>
-            <Dialog open onOpenChange={(open) => { if (!open && !saving && !visionLoading) navigate('/suitcases') }}>
+        <>
+            <Dialog open={open} onOpenChange={(nextOpen) => { if (!nextOpen && !saving && !visionLoading) onClose?.() }}>
                 <DialogContent className='sm:max-w-xl'>
                     <DialogHeader className='pr-8'>
                         <div className='mb-2 flex size-10 items-center justify-center rounded-lg bg-muted'><Luggage className='size-5' /></div>
@@ -222,7 +219,7 @@ const NewSuitcase = () => {
                     </form>
                 </DialogContent>
             </Dialog>
-        </main>
+        </>
     )
 }
 

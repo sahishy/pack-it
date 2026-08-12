@@ -274,12 +274,8 @@ const Signup = () => {
 					</p>
 
 					<p className='text-xs text-neutral1 text-center'>
-						By continuing, you agree to Pack-It's{' '}
-						<a href='#' className='underline hover:text-neutral0'>
-							Terms of Service
-						</a>{' '}
-						and{' '}
-						<a href='#' className='underline hover:text-neutral0'>
+						By continuing, you acknowledge our{' '}
+						<a href='https://sites.google.com/view/pack-it-privacy/home' target='_blank' rel='noreferrer' className='underline hover:text-neutral0'>
 							Privacy Policy
 						</a>
 						.

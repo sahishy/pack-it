@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { FaDollarSign, FaGlobe, FaUsers } from 'react-icons/fa6'
+import { FaCalculator, FaDollarSign, FaGlobe } from 'react-icons/fa6'
 import { Card } from '@/components/ui/card'
 import Return from '@/components/common/Return'
 import Input from '@/components/common/FormInput'
 import Slider from '@/components/common/LabeledSlider'
-import Counter from '@/components/common/Counter'
+import { Counter } from '@/components/ui/counter'
 import CommandPalette from '@/components/common/CommandPalette'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
 import {
     calculateTipSummary,
     getDefaultTipPercent,
@@ -57,168 +58,169 @@ const TipCalculator = () => {
 
     return (
         <main className='min-h-screen bg-neutral5'>
-            <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
+            <div className='mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Tip Calculator</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Calculate tips by country and split the bill with ease.</p>
-                </div>
+                <ToolPageHeader
+                    title='Tip Calculator'
+                    description='Calculate tips by country and split the bill with ease.'
+                    icon={FaCalculator}
+                    color='#4f85f6'
+                />
 
-                <Card className='flex flex-col gap-3'>
-                    <h2 className='text-sm font-medium text-neutral0'>Country</h2>
+                <div className='grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_minmax(19rem,0.78fr)] md:gap-6'>
+                    <div className='flex min-w-0 flex-col gap-4'>
+                        <Card className='flex flex-col gap-3'>
+                            <h2 className='text-sm font-medium text-neutral0'>Country</h2>
 
-                    <button
-                        type='button'
-                        onClick={() => {
-                            setCountryQuery(selectedCountry?.country ?? '')
-                            setIsCountryPaletteOpen(true)
-                        }}
-                        className='flex min-h-10.5 w-full items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 text-left text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
-                    >
-                        <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-neutral4 text-neutral1'>
-                            <FaGlobe />
-                        </div>
+                            <button
+                                type='button'
+                                onClick={() => {
+                                    setCountryQuery(selectedCountry?.country ?? '')
+                                    setIsCountryPaletteOpen(true)
+                                }}
+                                className='flex min-h-10.5 w-full items-center gap-3 rounded-xl border border-neutral2 bg-neutral5 px-3 py-2 text-left text-sm text-neutral0 outline-none transition focus:border-neutral1 focus:ring-2 focus:ring-neutral3'
+                            >
+                                <div className='flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-neutral4 text-neutral1'>
+                                    <FaGlobe />
+                                </div>
 
-                        <span className={selectedCountry?.country ? 'text-neutral0' : 'text-neutral1'}>
-                            {selectedCountry?.country ?? 'Select a country'}
-                        </span>
-                    </button>
+                                <span className={selectedCountry?.country ? 'text-neutral0' : 'text-neutral1'}>
+                                    {selectedCountry?.country ?? 'Select a country'}
+                                </span>
+                            </button>
 
-                    {tipRange.hasNumericRange ? (
-                        <p className='text-xs text-neutral1'>
-                            Typical tip range: {tipRange.min}% - {tipRange.max}%
-                        </p>
-                    ) : tipRange.other ? (
-                        <p className='text-xs text-neutral1'>{tipRange.other}</p>
-                    ) : null}
-                </Card>
+                            {tipRange.hasNumericRange ? (
+                                <p className='text-xs text-neutral1'>
+                                    Typical tip range: {tipRange.min}% - {tipRange.max}%
+                                </p>
+                            ) : tipRange.other ? (
+                                <p className='text-xs text-neutral1'>{tipRange.other}</p>
+                            ) : null}
+                        </Card>
 
-                <Card>
-                    <h2 className='text-sm font-medium text-neutral0'>Bill Amount</h2>
+                        <Card className='flex flex-col gap-3'>
+                            <h2 className='text-sm font-medium text-neutral0'>Tip Percentage</h2>
 
-                    <div className='relative mt-1'>
-                        <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-2xl text-neutral1'>
-                            <FaDollarSign />
-                        </span>
+                            <Slider
+                                id='tipPercent'
+                                value={tipPercent}
+                                min={0}
+                                max={30}
+                                step={1}
+                                valueLabel={`${tipPercent}%`}
+                                leftHint={`${tipRange.min}%`}
+                                rightHint={`${tipRange.max}%`}
+                                onChange={setTipPercent}
+                            />
 
-                        <Input
-                            id='billAmount'
-                            type='number'
-                            inputMode='decimal'
-                            min='0'
-                            step='0.01'
-                            value={billAmount}
-                            onChange={(event) => setBillAmount(event.target.value)}
-                            placeholder='0.00'
-                            className='no-spinner py-4 pl-14 pr-14 text-center text-4xl! leading-none! font-semibold!'
-                        />
-                    </div>
-                </Card>
+                            <div className='flex flex-wrap gap-2'>
+                                {TIP_PERCENT_PRESETS.map((preset) => {
+                                    const isActive = tipPercent === preset
 
-                <Card className='flex flex-col gap-3'>
-                    <h2 className='text-sm font-medium text-neutral0'>Tip Percentage</h2>
-
-                    <Slider
-                        id='tipPercent'
-                        value={tipPercent}
-                        min={0}
-                        max={30}
-                        step={1}
-                        valueLabel={`${tipPercent}%`}
-                        leftHint={`${tipRange.min}%`}
-                        rightHint={`${tipRange.max}%`}
-                        onChange={setTipPercent}
-                    />
-
-                    <div className='flex flex-wrap gap-2'>
-                        {TIP_PERCENT_PRESETS.map((preset) => {
-                            const isActive = tipPercent === preset
-
-                            return (
-                                <button
-                                    key={preset}
-                                    type='button'
-                                    onClick={() => setTipPercent(preset)}
-                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
-                                        ? 'border-primary0 bg-primary0 text-white'
-                                        : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
-                                    }`}
-                                >
-                                    {preset}%
-                                </button>
-                            )
-                        })}
-                    </div>
-                </Card>
-
-                <Card className='flex flex-col gap-3'>
-                    <h2 className='text-sm font-medium text-neutral0'>Split Between</h2>
-
-                    <div className='relative'>
-                        <span className='pointer-events-none absolute inset-y-0 left-5 z-10 flex items-center text-2xl text-neutral1'>
-                            <FaUsers />
-                        </span>
-
-                        <Counter
-                            id='splitBetween'
-                            value={splitBetween}
-                            onChange={setSplitBetween}
-                            min={1}
-                            className='justify-center! py-4! pl-14! pr-14! text-center text-4xl! leading-none! font-semibold!'
-                        />
-                    </div>
-
-                    <div className='flex flex-wrap gap-2'>
-                        {SPLIT_PRESETS.map((preset) => {
-                            const isActive = splitBetween === preset
-
-                            return (
-                                <button
-                                    key={preset}
-                                    type='button'
-                                    onClick={() => setSplitBetween(preset)}
-                                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
-                                        ? 'border-primary0 bg-primary0 text-white'
-                                        : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
-                                    }`}
-                                >
-                                    {preset}
-                                </button>
-                            )
-                        })}
-                    </div>
-                </Card>
-
-                <Card className='border-none bg-linear-to-r from-[#4f85f6] to-[#22c2e8] text-white'>
-                    <div className='flex flex-col gap-2 text-sm'>
-                        <div className='flex items-center justify-between'>
-                            <span className='text-white/80'>Bill Amount</span>
-                            <span className='font-medium text-white'>{formatCurrency(summary.billAmount)}</span>
-                        </div>
-
-                        <div className='flex items-center justify-between'>
-                            <span className='text-white/80'>Tip Amount ({summary.tipPercent}%)</span>
-                            <span className='font-medium text-white'>{formatCurrency(summary.tipAmount)}</span>
-                        </div>
-
-                        <hr className='border-white/20 my-2'/>
-
-                        <div className='flex items-center justify-between'>
-                            <span className='font-medium text-white'>Total</span>
-                            <span className={`${summary.splitBetween > 1 ? '' : 'text-2xl'} font-semibold text-white`}>
-                                {formatCurrency(summary.totalAmount)}
-                            </span>
-                        </div>
-
-                        {summary.splitBetween > 1 ? (
-                            <div className='flex items-center justify-between'>
-                                <span className='text-white/80'>Per Person ({summary.splitBetween})</span>
-                                <span className='text-2xl font-medium text-white'>{formatCurrency(summary.perPersonAmount)}</span>
+                                    return (
+                                        <button
+                                            key={preset}
+                                            type='button'
+                                            onClick={() => setTipPercent(preset)}
+                                            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
+                                                ? 'border-primary0 bg-primary0 text-white'
+                                                : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
+                                            }`}
+                                        >
+                                            {preset}%
+                                        </button>
+                                    )
+                                })}
                             </div>
-                        ) : null}
+                        </Card>
+
+                        <Card className='flex flex-col gap-3'>
+                            <h2 className='text-sm font-medium text-neutral0'>Split Between</h2>
+
+                            <Counter
+                                number={splitBetween}
+                                setNumber={setSplitBetween}
+                                min={1}
+                                className='h-12 w-full justify-between rounded-xl! px-2 [&>span]:text-lg [&>span]:font-semibold'
+                            />
+
+                            <div className='flex flex-wrap gap-2'>
+                                {SPLIT_PRESETS.map((preset) => {
+                                    const isActive = splitBetween === preset
+
+                                    return (
+                                        <button
+                                            key={preset}
+                                            type='button'
+                                            onClick={() => setSplitBetween(preset)}
+                                            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${isActive
+                                                ? 'border-primary0 bg-primary0 text-white'
+                                                : 'border-neutral2 bg-neutral5 text-neutral1 hover:border-neutral1 hover:text-neutral0'
+                                            }`}
+                                        >
+                                            {preset}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </Card>
                     </div>
-                </Card>
+
+                    <aside className='flex min-w-0 flex-col gap-4 md:sticky md:top-6'>
+                        <Card>
+                            <h2 className='text-sm font-medium text-neutral0'>Bill Amount</h2>
+
+                            <div className='relative mt-1'>
+                                <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-xl text-neutral1'>
+                                    <FaDollarSign />
+                                </span>
+
+                                <Input
+                                    id='billAmount'
+                                    type='number'
+                                    inputMode='decimal'
+                                    min='0'
+                                    step='0.01'
+                                    value={billAmount}
+                                    onChange={(event) => setBillAmount(event.target.value)}
+                                    placeholder='0.00'
+                                    className='h-14 pr-14 pl-14 text-center text-2xl! font-semibold! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
+                                />
+                            </div>
+                        </Card>
+
+                        <Card className='border-none bg-linear-to-r from-[#4f85f6] to-[#22c2e8] text-white'>
+                            <div className='flex flex-col gap-2 text-sm'>
+                                <div className='flex items-center justify-between'>
+                                    <span className='text-white/80'>Bill Amount</span>
+                                    <span className='font-medium text-white'>{formatCurrency(summary.billAmount)}</span>
+                                </div>
+
+                                <div className='flex items-center justify-between'>
+                                    <span className='text-white/80'>Tip Amount ({summary.tipPercent}%)</span>
+                                    <span className='font-medium text-white'>{formatCurrency(summary.tipAmount)}</span>
+                                </div>
+
+                                <hr className='my-2 border-white/20'/>
+
+                                <div className='flex items-center justify-between'>
+                                    <span className='font-medium text-white'>Total</span>
+                                    <span className={`${summary.splitBetween > 1 ? '' : 'text-2xl'} font-semibold text-white`}>
+                                        {formatCurrency(summary.totalAmount)}
+                                    </span>
+                                </div>
+
+                                {summary.splitBetween > 1 ? (
+                                    <div className='flex items-center justify-between'>
+                                        <span className='text-white/80'>Per Person ({summary.splitBetween})</span>
+                                        <span className='text-2xl font-medium text-white'>{formatCurrency(summary.perPersonAmount)}</span>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </Card>
+                    </aside>
+                </div>
             </div>
 
             <CommandPalette

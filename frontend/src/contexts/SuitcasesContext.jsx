@@ -53,7 +53,10 @@ const SuitcasesProvider = ({ children }) => {
         try {
             setSaving(true)
             setSaveError(null)
-            await deleteSuitcase(suitcaseId)
+            if(!user?.uid) {
+                throw new Error('You must be logged in to delete a suitcase.')
+            }
+            await deleteSuitcase(user.uid, suitcaseId)
         } catch (errorValue) {
             setSaveError(errorValue)
             throw errorValue

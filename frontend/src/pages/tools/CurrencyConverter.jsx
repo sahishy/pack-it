@@ -5,6 +5,7 @@ import Return from '@/components/common/Return'
 import Input from '@/components/common/FormInput'
 import { Button } from '@/components/ui/button'
 import CommandPalette from '@/components/common/CommandPalette'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
 import {
     convertCurrencyAmount,
     getCurrencies,
@@ -20,7 +21,7 @@ const formatAmount = (value) => {
 
 const CurrencyConverter = () => {
     const currencies = useMemo(() => getCurrencies(), [])
-    const defaultPair = useMemo(() => getDefaultCurrencyPair(), [currencies])
+    const defaultPair = useMemo(() => getDefaultCurrencyPair(), [])
 
     const [fromCurrency, setFromCurrency] = useState(defaultPair.fromCurrency)
     const [toCurrency, setToCurrency] = useState(defaultPair.toCurrency)
@@ -78,10 +79,12 @@ const CurrencyConverter = () => {
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Currency Converter</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Convert values across world currencies with local exchange-rate data.</p>
-                </div>
+                <ToolPageHeader
+                    title='Currency Converter'
+                    description='Convert values across world currencies with local exchange-rate data.'
+                    icon={FaDollarSign}
+                    color='#2bc96b'
+                />
 
                 <Card className='border-none bg-linear-to-r from-[#2bc96b] to-[#1fb38e] text-white'>
                     <div className='flex items-start gap-4'>
@@ -98,8 +101,8 @@ const CurrencyConverter = () => {
                     </div>
                 </Card>
 
-                <Card className='flex flex-col gap-5'>
-                    <section className='flex flex-col gap-3'>
+                <Card className='grid gap-5 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-4'>
+                    <section className='flex min-w-0 flex-col gap-3'>
                         <h2 className='text-sm font-medium text-neutral0'>From</h2>
 
                         <button
@@ -114,18 +117,18 @@ const CurrencyConverter = () => {
                                 {fromCurrency?.symbol ?? '$'}
                             </div>
 
-                            <span className='flex flex-col gap-0.5'>
-                                <span className='text-sm text-neutral0'>
+                            <span className='flex min-w-0 flex-col gap-0.5'>
+                                <span className='truncate text-sm text-neutral0'>
                                     {fromCurrency ? `${fromCurrency.country} - ${fromCurrency.currencyName}` : 'Select a currency'}
                                 </span>
                                 {fromCurrency ? (
-                                    <span className='text-xs text-neutral1'>1 USD = {fromCurrency.exchangeRate} {fromCurrency.currencyName}</span>
+                                    <span className='truncate text-xs text-neutral1'>1 USD = {fromCurrency.exchangeRate} {fromCurrency.currencyName}</span>
                                 ) : null}
                             </span>
                         </button>
 
                         <div className='relative'>
-                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-2xl font-semibold text-neutral1'>
+                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-xl font-semibold text-neutral1'>
                                 {fromCurrency?.symbol ?? '$'}
                             </span>
 
@@ -138,25 +141,25 @@ const CurrencyConverter = () => {
                                 value={fromAmount}
                                 onChange={(event) => setFromAmount(event.target.value)}
                                 placeholder='0.00'
-                                className='no-spinner py-4 pl-14 pr-14 text-center text-4xl! leading-none! font-semibold!'
+                                className='h-14 pr-14 pl-14 text-center text-2xl! font-semibold! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
                             />
                         </div>
                     </section>
 
-                    <section className='flex items-center justify-center'>
+                    <section className='flex items-center justify-center md:self-center'>
                         <Button
                             type='button'
                             onClick={swapCurrencies}
                             variant='secondary'
-                            className='flex gap-3'
+                            className='flex gap-3 md:size-10 md:rounded-full md:p-0'
                             aria-label='Swap currencies'
                         >
                             <FaArrowRightArrowLeft className='text-sm' />
-                            Swap Currencies
+                            <span className='md:hidden'>Swap Currencies</span>
                         </Button>
                     </section>
 
-                    <section className='flex flex-col gap-3'>
+                    <section className='flex min-w-0 flex-col gap-3'>
                         <h2 className='text-sm font-medium text-neutral0'>To</h2>
 
                         <button
@@ -171,18 +174,18 @@ const CurrencyConverter = () => {
                                 {toCurrency?.symbol ?? '$'}
                             </div>
 
-                            <span className='flex flex-col gap-0.5'>
-                                <span className='text-sm text-neutral0'>
+                            <span className='flex min-w-0 flex-col gap-0.5'>
+                                <span className='truncate text-sm text-neutral0'>
                                     {toCurrency ? `${toCurrency.country} - ${toCurrency.currencyName}` : 'Select a currency'}
                                 </span>
                                 {toCurrency ? (
-                                    <span className='text-xs text-neutral1'>1 USD = {toCurrency.exchangeRate} {toCurrency.currencyName}</span>
+                                    <span className='truncate text-xs text-neutral1'>1 USD = {toCurrency.exchangeRate} {toCurrency.currencyName}</span>
                                 ) : null}
                             </span>
                         </button>
 
                         <div className='relative'>
-                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-2xl font-semibold text-white'>
+                            <span className='pointer-events-none absolute inset-y-0 left-5 flex items-center text-xl font-semibold text-white'>
                                 {toCurrency?.symbol ?? '$'}
                             </span>
 
@@ -191,7 +194,7 @@ const CurrencyConverter = () => {
                                 type='text'
                                 value={formatAmount(conversion.convertedAmount)}
                                 readOnly
-                                className='no-spinner border-none! bg-linear-to-r from-[#2bc96b] to-[#1fb38e] py-4 pl-14 pr-14 text-center text-4xl! leading-none! font-semibold! text-white!'
+                                className='h-14 border-none! bg-linear-to-r from-[#2bc96b] to-[#1fb38e] pr-14 pl-14 text-center text-2xl! font-semibold! text-white! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
                             />
                         </div>
                     </section>

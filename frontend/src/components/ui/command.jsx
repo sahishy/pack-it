@@ -37,7 +37,8 @@ function CommandDialog({
   description = "Search for a command to run...",
   children,
   className,
-  showCloseButton = false,
+  overlayClassName,
+  showCloseButton = true,
   ...props
 }) {
   return (
@@ -47,7 +48,8 @@ function CommandDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <DialogContent
-        className={cn("overflow-hidden rounded-xl! p-0", className)}
+        className={cn("z-[70] overflow-hidden rounded-2xl! p-0 shadow-2xl", className)}
+        overlayClassName={cn("z-[60] bg-black/30 backdrop-blur-[2px]", overlayClassName)}
         showCloseButton={showCloseButton}>
         {children}
       </DialogContent>

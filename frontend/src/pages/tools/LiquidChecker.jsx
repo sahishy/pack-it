@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card'
 import Return from '@/components/common/Return'
 import Input from '@/components/common/FormInput'
 import Select from '@/components/common/FormSelect'
+import ToolPageHeader from '@/components/tools/ToolPageHeader'
 import {
     CARRY_ON_LIMIT_ML,
     getAllowanceStatus,
@@ -33,10 +34,12 @@ const LiquidChecker = () => {
             <div className='mx-auto flex w-full max-w-3xl flex-col gap-4 px-6 py-10'>
                 <Return link='/tools' text='Back to Tools' />
 
-                <div className='mb-2'>
-                    <h1 className='text-4xl font-bold text-neutral0'>Liquid Checker</h1>
-                    <p className='mt-1 text-sm text-neutral1'>Check if your liquid containers are carry-on compliant.</p>
-                </div>
+                <ToolPageHeader
+                    title='Liquid Checker'
+                    description='Check if your liquid containers are carry-on compliant.'
+                    icon={FaDroplet}
+                    color='#20b9d8'
+                />
 
                 <Card className='border-none bg-linear-to-r from-[#20b9d8] to-[#3a7df7]'>
                     <div className='flex items-start gap-4'>
@@ -73,7 +76,7 @@ const LiquidChecker = () => {
                             value={containerValue}
                             onChange={(event) => setContainerValue(event.target.value)}
                             placeholder='0.00'
-                            className='no-spinner py-4 text-center text-4xl! leading-none! font-semibold!'
+                            className='h-14 text-center text-2xl! font-semibold! tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none'
                         />
 
                         <Select
@@ -113,14 +116,14 @@ const LiquidChecker = () => {
                 <Card className='flex flex-col gap-3'>
                     <h2 className='text-sm font-medium text-neutral0'>Common Items</h2>
 
-                    <div className='flex flex-col gap-2'>
+                    <div className='grid gap-2 sm:grid-cols-2'>
                         {commonItems.map((item) => {
                             const allowed = isItemAllowed(item.volumeMl)
 
                             return (
-                                <Card
+                                <div
                                     key={item.item}
-                                    className='flex items-center justify-between p-4!'
+                                    className='flex items-center justify-between rounded-lg border border-neutral3 bg-neutral5 px-3 py-2.5'
                                 >
                                     <div className='flex flex-col gap-0.5'>
                                         <p className='text-sm font-medium text-neutral0'>{item.item}</p>
@@ -131,9 +134,9 @@ const LiquidChecker = () => {
                                         className={`items-center justify-center rounded-full ${allowed ? 'text-positive1' : 'text-negative1'}`}
                                         aria-label={allowed ? 'Allowed' : 'Not allowed'}
                                     >
-                                        {allowed ? <FaCheck className='text-lg' /> : <FaXmark className='text-lg' />}
+                                        {allowed ? <FaCheck className='text-sm' /> : <FaXmark className='text-sm' />}
                                     </div>
-                                </Card>
+                                </div>
                             )
                         })}
                     </div>
