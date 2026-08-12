@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
-import { AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, CalendarDays, Camera, CheckCircle2, LoaderCircle, Mic, PackageOpen, Pencil, Plus, Trash2 } from 'lucide-react'
+import { AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, CalendarDays, Camera, CheckCircle2, ImageIcon, LoaderCircle, Mic, PackageOpen, Pencil, Plus, Square, Trash2, X } from 'lucide-react'
 import { FaSuitcaseRolling } from 'react-icons/fa6'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -28,6 +28,7 @@ import { useTripPlan } from '../contexts/PlansContext'
 import { useSuitcases } from '../contexts/SuitcasesContext'
 import { removeItem, updateItemChecked, updateItemManualMetrics } from '../services/itemService'
 import { sendChatMessage, subscribeToTripChatMessages } from '../services/chatService'
+import { CHAT_IMAGE_ACCEPT, prepareChatImage, takeNativeChatPhoto, transcribeChatAudio } from '../services/chatMediaService.js'
 import { getTripById, getTripThumbnail } from '../utils/tripUtils'
 import { getAirlineDisplayById } from '../utils/airlineUtils'
 import { formatDisplayDate } from '../utils/formatters'
@@ -55,6 +56,7 @@ const EMPTY_CHAT_PROMPTS = [
 ]
 
 const DELETE_CONFIRMATION_DELAY_MS = 3000
+const MAX_VOICE_SECONDS = 60
 
 const TripOverview = () => {
     const navigate = useNavigate()
@@ -84,6 +86,12 @@ const TripOverview = () => {
     const [chatLoading, setChatLoading] = useState(true)
     const [chatSending, setChatSending] = useState(false)
     const [chatError, setChatError] = useState(null)
+    const [chatImage, setChatImage] = useState(null)
+    const [imagePreparing, setImagePreparing] = useState(false)
+    const [recordingStarting, setRecordingStarting] = useState(false)
+    const [isRecording, setIsRecording] = useState(false)
+    const [, setRecordingSeconds] = useState(0)
+    const [transcribing, setTranscribing] = useState(false)
     const [revealingMessageId, setRevealingMessageId] = useState(null)
     const [showScrollToLatest, setShowScrollToLatest] = useState(false)
     const [showChatScrollbar, setShowChatScrollbar] = useState(false)
@@ -98,6 +106,13 @@ const TripOverview = () => {
     const hideChatScrollbarTimeoutRef = useRef(null)
     const suppressNextChatScrollbarRef = useRef(false)
     const optimisticChatMessagesRef = useRef(new Map())
+    const imageInputRef = useRef(null)
+    const mediaRecorderRef = useRef(null)
+    const mediaStreamRef = useRef(null)
+    const recordingChunksRef = useRef([])
+    const recordingTimerRef = useRef(null)
+    const recordingStartedAtRef = useRef(0)
+    const discardRecordingRef = useRef(false)
     const weightCardTouchStartRef = useRef(null)
     const didSwipeWeightCardRef = useRef(false)
     const isNativePlatform = Capacitor.isNativePlatform()
@@ -153,7 +168,15 @@ const TripOverview = () => {
 
     useEffect(() => () => {
         window.clearTimeout(hideChatScrollbarTimeoutRef.current)
+        window.clearInterval(recordingTimerRef.current)
+        discardRecordingRef.current = true
+        if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+        mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
     }, [])
+
+    useEffect(() => () => {
+        if (chatImage?.previewUrl) URL.revokeObjectURL(chatImage.previewUrl)
+    }, [chatImage?.previewUrl])
 
     useEffect(() => {
         if (!showDeleteConfirmation) return undefined
@@ -378,15 +401,18 @@ const TripOverview = () => {
 
     const handleSendMessage = async () => {
         const message = chatDraft.trim()
-        if (!message || chatSending) return
+        const image = chatImage?.file ?? null
+        if ((!message && !image) || chatSending || recordingStarting || isRecording || transcribing || imagePreparing) return
 
         const messageId = crypto.randomUUID()
+        const displayedMessage = message || 'Photo attached'
         const optimisticUserMessage = {
             id: messageId,
             userId: user.uid,
             tripId,
             role: 'user',
-            content: message,
+            content: displayedMessage,
+            hasImage: Boolean(image),
             actions: [],
             createdAt: new Date(),
             optimistic: true,
@@ -402,7 +428,8 @@ const TripOverview = () => {
         setChatMessages((currentMessages) => [...currentMessages, optimisticUserMessage])
 
         try {
-            const response = await sendChatMessage({ tripId, messageId, message })
+            const response = await sendChatMessage({ tripId, messageId, message, image })
+            setChatImage(null)
             const assistantMessageId = `${messageId}_assistant`
             const optimisticAssistantMessage = {
                 id: assistantMessageId,
@@ -423,6 +450,7 @@ const TripOverview = () => {
                 : [...currentMessages, optimisticAssistantMessage])
             setRevealingMessageId(assistantMessageId)
         } catch (errorValue) {
+            setChatDraft((current) => current || message)
             setChatError(errorValue)
         } finally {
             setChatSending(false)
@@ -434,6 +462,120 @@ const TripOverview = () => {
             event.preventDefault()
             void handleSendMessage()
         }
+    }
+
+    const handleSelectedImage = async (file) => {
+        if (!file) return
+        try {
+            setImagePreparing(true)
+            setChatError(null)
+            const preparedFile = await prepareChatImage(file)
+            setChatImage({ file: preparedFile, previewUrl: URL.createObjectURL(preparedFile) })
+        } catch (errorValue) {
+            setChatError(errorValue)
+        } finally {
+            setImagePreparing(false)
+            if (imageInputRef.current) imageInputRef.current.value = ''
+        }
+    }
+
+    const handlePhotoButton = async () => {
+        if (!isNativePlatform) {
+            imageInputRef.current?.click()
+            return
+        }
+
+        try {
+            setImagePreparing(true)
+            setChatError(null)
+            const preparedFile = await takeNativeChatPhoto()
+            if (preparedFile) setChatImage({ file: preparedFile, previewUrl: URL.createObjectURL(preparedFile) })
+        } catch (errorValue) {
+            if (!/cancel/i.test(errorValue?.message ?? '')) setChatError(errorValue)
+        } finally {
+            setImagePreparing(false)
+        }
+    }
+
+    const stopVoiceRecording = () => {
+        if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop()
+    }
+
+    const discardVoiceRecording = () => {
+        discardRecordingRef.current = true
+        stopVoiceRecording()
+    }
+
+    const startVoiceRecording = async () => {
+        try {
+            if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+                throw new Error('Voice recording is not supported on this device.')
+            }
+
+            setChatError(null)
+            setRecordingStarting(true)
+            discardRecordingRef.current = false
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const mimeType = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/webm']
+                .find((type) => MediaRecorder.isTypeSupported(type))
+            const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined)
+            mediaStreamRef.current = stream
+            mediaRecorderRef.current = recorder
+            recordingChunksRef.current = []
+            recordingStartedAtRef.current = Date.now()
+            setRecordingSeconds(0)
+            setIsRecording(true)
+
+            recorder.addEventListener('dataavailable', (event) => {
+                if (event.data.size) recordingChunksRef.current.push(event.data)
+            })
+            recorder.addEventListener('stop', async () => {
+                window.clearInterval(recordingTimerRef.current)
+                stream.getTracks().forEach((track) => track.stop())
+                mediaStreamRef.current = null
+                mediaRecorderRef.current = null
+                setIsRecording(false)
+                if (discardRecordingRef.current) return
+
+                const audio = new Blob(recordingChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+                if (!audio.size) {
+                    setChatError(new Error('No audio was recorded. Please try again.'))
+                    return
+                }
+
+                try {
+                    setTranscribing(true)
+                    const result = await transcribeChatAudio(audio)
+                    const transcript = result?.text?.trim()
+                    if (!transcript) throw new Error('No speech was detected. Please try again.')
+                    setChatDraft((current) => `${current.trim()}${current.trim() ? ' ' : ''}${transcript}`.slice(0, 2000))
+                } catch (errorValue) {
+                    setChatError(errorValue)
+                } finally {
+                    setTranscribing(false)
+                }
+            })
+
+            recorder.start(250)
+            setRecordingStarting(false)
+            recordingTimerRef.current = window.setInterval(() => {
+                const elapsed = Math.min(MAX_VOICE_SECONDS, Math.floor((Date.now() - recordingStartedAtRef.current) / 1000))
+                setRecordingSeconds(elapsed)
+                if (elapsed >= MAX_VOICE_SECONDS) stopVoiceRecording()
+            }, 250)
+        } catch (errorValue) {
+            mediaStreamRef.current?.getTracks().forEach((track) => track.stop())
+            setRecordingStarting(false)
+            setIsRecording(false)
+            setChatError(new Error(errorValue?.name === 'NotAllowedError'
+                ? 'Microphone access is needed to record a message.'
+                : errorValue?.message || 'The microphone could not be started.'))
+        }
+    }
+
+    const handleVoiceButton = () => {
+        if (isRecording) stopVoiceRecording()
+        else void startVoiceRecording()
     }
 
     const chatComposer = (
@@ -449,8 +591,22 @@ const TripOverview = () => {
                 </div>
             ) : null}
             <div className='flex flex-col gap-1 p-2 bg-neutral4 rounded-xl'>
+                {chatImage ? (
+                    <div className='group relative m-1 size-16 overflow-visible rounded-lg'>
+                        <img src={chatImage.previewUrl} alt='Photo attached' className='size-16 rounded-lg object-cover' />
+                        <Button
+                            variant='secondary'
+                            size='icon-xs'
+                            className='absolute -right-1.5 -top-1.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100'
+                            aria-label='Remove photo'
+                            onClick={() => setChatImage(null)}
+                        >
+                            <X className='size-3.5' />
+                        </Button>
+                    </div>
+                ) : null}
                 <div className='relative'>
-                    <Textarea value={chatDraft} onChange={(event) => setChatDraft(event.target.value)} onKeyDown={handleChatKeyDown} placeholder={hasSentMessage ? 'Message Pack-It' : ''} rows={1} maxLength={2000} disabled={chatSending} className='max-h-32 min-h-8 resize-none border-0 bg-transparent! px-2 py-2 shadow-none focus-visible:ring-0' />
+                    <Textarea value={chatDraft} onChange={(event) => setChatDraft(event.target.value)} onKeyDown={handleChatKeyDown} placeholder={hasSentMessage ? 'Message Pack-It' : ''} rows={1} maxLength={2000} disabled={chatSending || transcribing} className='max-h-32 min-h-8 resize-none border-0 bg-transparent! px-2 py-2 shadow-none focus-visible:ring-0' />
                     {!hasSentMessage && !chatDraft ? (
                         <div aria-hidden='true' className='pointer-events-none absolute inset-x-2 top-2 h-6 overflow-hidden text-sm leading-6 text-muted-foreground'>
                             {outgoingPromptIndex !== null ? <span className='absolute inset-x-0 animate-[chat-prompt-out_280ms_ease-in_forwards] motion-reduce:animate-none'>{EMPTY_CHAT_PROMPTS[outgoingPromptIndex]}</span> : null}
@@ -459,10 +615,22 @@ const TripOverview = () => {
                     ) : null}
                 </div>
                 <div className='flex items-center justify-between px-1'>
-                    <Button variant='ghost' size='icon' className='shrink-0' aria-label='Photo messages are coming soon' disabled><Camera className='size-5' /></Button>
+                    <input ref={imageInputRef} type='file' accept={CHAT_IMAGE_ACCEPT} className='hidden' onChange={(event) => void handleSelectedImage(event.target.files?.[0])} />
+                    <Button
+                        variant='ghost'
+                        size='icon'
+                        className='shrink-0'
+                        aria-label={isRecording ? 'Discard voice recording' : isNativePlatform ? 'Take a photo' : 'Choose a photo'}
+                        onClick={isRecording ? discardVoiceRecording : () => void handlePhotoButton()}
+                        disabled={chatSending || imagePreparing || recordingStarting || transcribing}
+                    >
+                        {imagePreparing ? <LoaderCircle className='size-5 animate-spin' /> : isRecording ? <Trash2 className='size-5' /> : <Camera className='size-5' />}
+                    </Button>
                     <div className='flex items-center gap-1'>
-                        <Button variant='ghost' size='icon' className='shrink-0' aria-label='Voice messages are coming soon' disabled><Mic className='size-5' /></Button>
-                        <Button size='icon' className='shrink-0 size-8' aria-label='Send message' onClick={() => void handleSendMessage()} disabled={!chatDraft.trim() || chatSending}><ArrowUp className='size-4' /></Button>
+                        <Button variant='ghost' size='icon' className='shrink-0' aria-label={isRecording ? 'Stop recording' : 'Record a voice message'} onClick={handleVoiceButton} disabled={chatSending || recordingStarting || transcribing || imagePreparing}>
+                            {recordingStarting || transcribing ? <LoaderCircle className='size-5 animate-spin' /> : isRecording ? <Square className='size-4 fill-current' /> : <Mic className='size-5' />}
+                        </Button>
+                        <Button size='icon' className='shrink-0 size-8' aria-label='Send message' onClick={() => void handleSendMessage()} disabled={(!chatDraft.trim() && !chatImage) || chatSending || recordingStarting || isRecording || transcribing || imagePreparing}><ArrowUp className='size-4' /></Button>
                     </div>
                 </div>
             </div>
@@ -495,7 +663,10 @@ const TripOverview = () => {
                                             {entry.role === 'assistant' ? (
                                                 <ChatMarkdown content={entry.content} animate={entry.id === revealingMessageId} />
                                             ) : (
-                                                <p className='whitespace-pre-wrap leading-6'>{entry.content}</p>
+                                                <div className='space-y-1.5'>
+                                                    {entry.hasImage ? <p className='flex items-center gap-1.5 text-sm opacity-80'><ImageIcon className='size-4' /> Photo attached</p> : null}
+                                                    {entry.content !== 'Photo attached' ? <p className='whitespace-pre-wrap leading-6'>{entry.content}</p> : null}
+                                                </div>
                                             )}
                                         </div>
                                     </MessageContent>
@@ -696,7 +867,7 @@ const TripOverview = () => {
                             <span className='truncate'>{trip.destination}</span>
                         </span>
                     </SheetTrigger>
-                    <SheetContent side='right' className='w-full gap-0 overflow-hidden rounded-l-2xl p-0 sm:max-w-md'>
+                    <SheetContent side='right' className='w-full gap-0 overflow-hidden rounded-l-2xl p-0 max-md:pt-[env(safe-area-inset-top)] max-md:[&>button]:top-[calc(env(safe-area-inset-top)+0.75rem)] sm:max-w-md'>
                         <div className='min-h-0 flex-1 overflow-y-auto'>
                             <div className='relative aspect-[16/9] p-2'>
                                 <img src={getTripThumbnail(trip)} alt={`${trip.destination} thumbnail`} className='size-full rounded-xl object-cover' />
